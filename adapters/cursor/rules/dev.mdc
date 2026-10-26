@@ -1,0 +1,15 @@
+---
+description: Autonomous dev-kit engineering squad protocol and quality gate rules.
+globs: *
+alwaysApply: true
+---
+
+# dev-kit Autonomous Development Squad
+
+When asked to implement a feature, resolve a Jira ticket, or fix a bug, follow `dev-kit/RUN.md` and `dev-kit/RULES.md`:
+
+1. **Role of PM:** Formulate `dev/PLAN.md` before writing code. Identify affected layers (Database, Backend, Frontend).
+2. **Database Changes:** Follow `dev-kit/agents/database.md`. Always write migrations with both `up` and `down`, add indexes on foreign keys, and test against local database.
+3. **Backend Changes:** Follow `dev-kit/agents/backend.md`. Enforce strict input validation (Zod/Pydantic) and write unit tests.
+4. **Frontend Changes:** Follow `dev-kit/agents/frontend.md`. Implement loading, error, empty, and success states.
+5. **Quality Gate:** Before declaring work done, run `python3 dev-kit/tools/test_runner.py` and verify all tests pass.
