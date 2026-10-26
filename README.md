@@ -1,6 +1,6 @@
 # dev-kit
 
-Current version: **0.1.0** (see `CHANGELOG.md`). Full documentation: [docs/GUIDE.md](docs/GUIDE.md). Protocol & workflow: [RUN.md](RUN.md).
+Current version: **0.1.1** (see `CHANGELOG.md`). Full documentation: [docs/GUIDE.md](docs/GUIDE.md). Protocol & workflow: [RUN.md](RUN.md).
 
 A portable autonomous software engineering squad: a **Project Manager & Tech Lead** orchestrator, specialized developers (**Database**, **Backend**, **Frontend**), and an independent **QA Engineer** quality gate that guarantees test suites pass and acceptance criteria are met before opening Pull Requests.
 
@@ -18,7 +18,7 @@ From the root of the project you want to develop on:
 curl -fsSL https://raw.githubusercontent.com/victorfigueira/dev-kit/main/get.sh | bash
 ```
 
-This downloads the kit into `dev-kit/` and installs the commands for Claude Code, Antigravity, and Cursor. For one tool only, add its name at the end: `| bash -s -- antigravity` (or `claude`, `cursor`). To pin a version, put `DEV_KIT_REF=v0.1.0` before `bash`.
+This downloads the kit into `dev-kit/` and installs the commands for Claude Code, Antigravity, and Cursor. For one tool only, add its name at the end: `| bash -s -- antigravity` (or `claude`, `cursor`). To pin a version, put `DEV_KIT_REF=v0.1.1` before `bash`.
 
 Keep squad working plans, temporary files, and the kit copy out of git:
 
@@ -101,11 +101,11 @@ flowchart TD
 
 | Role | Agent File | Primary Responsibilities | Key Rules & Boundaries |
 |---|---|---|---|
-| **Project Manager & Tech Lead** | `agents/pm.md` | Ingests tickets, extracts Acceptance Criteria, formulates `dev/PLAN.md`, creates branches, and sequences work. | Never edits code directly. Enforces quality gate before sign-off. |
-| **Database Engineer (DBA)** | `agents/database.md` | Schema modeling, migration scripts (`up`/`down`), index optimization, and local test database verification. | Operates strictly in local/Docker environments. Enforces Expand & Contract pattern. |
-| **Backend Developer** | `agents/backend.md` | REST/GraphQL endpoints, domain services, strict input validation schemas (Zod/Pydantic), and unit tests. | Never leaks raw database errors. Decouples HTTP from business logic. |
-| **Frontend Developer** | `agents/frontend.md` | Reusable UI components, client state, styling tokens, and accessibility (a11y). | Mandatory implementation of all 4 states (Loading, Error, Empty, Success). |
-| **QA Engineer (Quality Gate)** | `agents/qa.md` | Independent verification: executes test suites via `test_runner.py`, verifies all ACs, and inspects `git diff`. | Zero failing tests policy. Changes rejected with failure logs if tests fail. |
+| **Project Manager & Tech Lead** | `agents/pm.md` | Ingests tickets, extracts Acceptance Criteria, formulates `dev/PLAN.md`, creates branches, and sequences work. | Never edits code directly. Enforces quality gate, anti-scope creep, and 3-iteration circuit breaker. |
+| **Database Engineer (DBA)** | `agents/database.md` | Schema modeling, migration scripts (`up`/`down`), index optimization, and local test database verification. | Operates strictly in local/Docker environments. Enforces Expand & Contract, safe backfills, and PII encryption. |
+| **Backend Developer** | `agents/backend.md` | REST/GraphQL endpoints, domain services, strict input validation schemas (Zod/Pydantic), and unit tests. | Never leaks raw database errors. Enforces AuthN/AuthZ, IDOR protection, and deterministic offline mocking. |
+| **Frontend Developer** | `agents/frontend.md` | Reusable UI components, client state, styling tokens, and accessibility (a11y). | Mandatory implementation of all 4 states (Loading, Error, Empty, Success), mirrored form validation, and error boundaries. |
+| **QA Engineer (Quality Gate)** | `agents/qa.md` | Independent verification: executes test suites via `test_runner.py`, verifies all ACs, and inspects `git diff`. | Zero failing tests policy. Rejects tautological tests and produces structured remediation reports. |
 
 ---
 

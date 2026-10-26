@@ -146,29 +146,29 @@ python3 dev-kit/tools/jira_sync.py comment <TICKET_KEY> "PR ready with tests pas
 
 ### Project Manager & Tech Lead (`pm`)
 * **File:** `dev-kit/agents/pm.md`
-* **Role:** Architectural planning and dispatch.
+* **Role:** Architectural planning, task sequencing, and squad dispatch.
 * **Output:** `dev/PLAN.md`.
-* The PM never writes application code directly. Its duty is to break down requirements into clear, verifiable steps and ensure the right specialist is invoked at the right time.
+* **Safety Rule:** The PM never writes application code directly. Enforces strict anti-scope creep, manages ambiguity via documented assumptions, and stops repair loops via a 3-iteration circuit breaker.
 
 ### Database & Persistence Engineer (`database`)
 * **File:** `dev-kit/agents/database.md`
 * **Role:** Data modeling, schema migrations, query performance, and test seeds.
-* **Safety Rule:** Runs migrations exclusively against local Docker or test databases. Never touches production connections.
+* **Safety Rule:** Runs migrations exclusively against local Docker or test databases. Enforces Expand & Contract migrations, safe backfills for existing rows, and PII hashing/encryption.
 
 ### Backend & API Developer (`backend`)
 * **File:** `dev-kit/agents/backend.md`
 * **Role:** REST/GraphQL endpoints, business logic, validation schemas, and automated unit tests.
-* **Safety Rule:** Mandatory validation schemas on all inputs; structured error handling with zero database error leakage.
+* **Safety Rule:** Mandatory validation schemas on all inputs, strict AuthN/AuthZ and IDOR guards, structured error handling without database leakage, and deterministic offline mocking of 3rd-party services.
 
 ### Frontend & UI Developer (`frontend`)
 * **File:** `dev-kit/agents/frontend.md`
 * **Role:** UI components, client state, styling tokens, and accessibility (a11y).
-* **Safety Rule:** Mandatory implementation of all 4 async states (Loading, Error, Empty, Success).
+* **Safety Rule:** Mandatory implementation of all 4 async states (Loading, Error, Empty, Success), mirrored form validations, error boundaries, and shared contract type safety.
 
 ### QA Engineer & Quality Gate (`qa`)
 * **File:** `dev-kit/agents/qa.md`
-* **Role:** Independent quality verification.
-* **Safety Rule:** The Quality Gate is non-negotiable. Code with failing tests or unverified acceptance criteria is rejected and returned to the developer agent with failure logs.
+* **Role:** Independent quality verification, test authenticity audits, and diff inspection.
+* **Safety Rule:** The Quality Gate is non-negotiable. Rejects failing suites, tautological/dummy tests, or unverified acceptance criteria using structured `CHANGES REQUESTED` remediation reports.
 
 ---
 
