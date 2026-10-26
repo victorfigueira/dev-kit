@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 – 26/10/2026
+- Added Squad Delivery & Quality Gate Scorecard to `templates/PULL_REQUEST.md` for clear layer-by-layer visual reporting (Database, Backend, Frontend, QA).
+- Added Squad Delivery Matrix and Assumptions & Risks sections to `templates/PLAN.md`.
+- Updated `RUN.md` Step 6 and Step 7 with scorecard generation and structured chat delivery reporting.
+- Updated `README.md` and `docs/GUIDE.md` documentation to reflect the new scorecard artifact structure.
+
 ## 0.1.1 – 26/10/2026
 - Enhanced agent definitions across all 5 specialized roles (`pm`, `database`, `backend`, `frontend`, `qa`) with operational knowledge, safety protocols, and execution guardrails.
 - Project Manager & Tech Lead (`agents/pm.md`): added ambiguity & assumption handling, context handoff bundles for subagent dispatching, strict anti-scope creep guardrails, and a 3-iteration circuit breaker on repair loops.

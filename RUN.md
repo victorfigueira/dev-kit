@@ -117,7 +117,7 @@ Once QA approves:
    git add .
    git commit -m "feat(<scope>): <concise description of changes>"
    ```
-2. Write `dev/PULL_REQUEST.md` using `dev-kit/templates/PULL_REQUEST.md`.
+2. Write `dev/PULL_REQUEST.md` using `dev-kit/templates/PULL_REQUEST.md`, populating the Squad Delivery & Quality Gate Scorecard.
 3. If Jira is configured, post comment and transition to *In Review*:
    ```bash
    python3 dev-kit/tools/jira_sync.py transition <TICKET_KEY> "In Review"
@@ -128,8 +128,11 @@ Report completion in chat (maximum 15 lines):
 ```
 Squad task complete · [TICKET_KEY]: <Title>
 Branch: feat/<TICKET_KEY>-<slug>
-Engineers: [database-engineer, backend-dev, frontend-dev]
-Tests: Passed (<n> tests green · typecheck clean · lint clean)
+Delivery Scorecard:
+  • Database: [0 migrations · up/down verified]
+  • Backend: [<n> endpoints · <n> unit tests]
+  • Frontend: [<n> components · 4 states verified]
+  • Quality Gate: 🟢 APPROVED (<n> tests green · typecheck clean · lint clean)
 Acceptance Criteria: All <n> criteria verified
 Pull Request summary: dev/PULL_REQUEST.md
 Jira: [TICKET_KEY] transitioned to In Review

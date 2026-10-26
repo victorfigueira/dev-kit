@@ -72,11 +72,11 @@ flowchart TD
 ```
 
 1. **Ingest:** Reads ticket key (e.g. `AK-101`) from Jira or a prompt brief, extracting explicit Acceptance Criteria.
-2. **Plan:** The PM agent writes `dev/PLAN.md` documenting affected files, schema changes, and execution order.
+2. **Plan:** The PM agent writes `dev/PLAN.md` documenting affected files, Squad Delivery Matrix, assumptions, and execution order.
 3. **Branch:** Creates an isolated git branch (`feat/<TICKET>-<slug>`).
 4. **Build:** Dispatches specialists in order (Database $\rightarrow$ Backend $\rightarrow$ Frontend).
 5. **Verify:** The QA agent runs `tools/test_runner.py` and inspects `git diff`.
-6. **Deliver:** Writes `dev/PULL_REQUEST.md`, commits cleanly, and updates Jira status.
+6. **Deliver:** Writes `dev/PULL_REQUEST.md` (with Squad Delivery & Quality Gate Scorecard), commits cleanly, and updates Jira status.
 
 ---
 
