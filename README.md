@@ -1,6 +1,6 @@
 # dev-kit
 
-Current version: **0.1.0** (see `CHANGELOG.md`). Protocol & workflow: [RUN.md](RUN.md).
+Current version: **0.1.0** (see `CHANGELOG.md`). Full documentation: [docs/GUIDE.md](docs/GUIDE.md). Protocol & workflow: [RUN.md](RUN.md).
 
 A portable autonomous software engineering squad: a **Project Manager & Tech Lead** orchestrator, specialized developers (**Database**, **Backend**, **Frontend**), and a **QA Engineer** quality gate that guarantees test suites pass before opening Pull Requests.
 

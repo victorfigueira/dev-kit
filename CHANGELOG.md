@@ -11,3 +11,4 @@
 - Universal Test Runner (`tools/test_runner.py`): auto-detects and runs test suites across Node.js (Jest, Vitest), Python (pytest), Go, Rust, and .NET.
 - Jira Integration (`tools/jira_sync.py`): bidirectional synchronization of tickets, acceptance criteria extraction, and status transitions.
 - Environment Adapters: Skills for Antigravity, slash commands for Claude Code, and rules for Cursor.
+- Comprehensive Guide: added complete reference documentation in `docs/GUIDE.md`.
