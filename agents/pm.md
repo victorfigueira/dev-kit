@@ -59,6 +59,6 @@ Follow `dev-kit/RULES.md` and use the plan template at `dev-kit/templates/PLAN.m
   ```bash
   git commit -m "feat(<scope>): <concise description>"
   ```
-- Generate `dev/PULL_REQUEST.md` (with the Squad Delivery & Quality Gate Scorecard).
+- Generate `dev/PULL_REQUEST.md` (with Squad Delivery Scorecard and Token / USD Cost metrics calculated via `tools/cost_tracker.py`).
 - Transition Jira ticket to *In Review* (via `tools/jira_sync.py transition <KEY> "In Review"`).
 - **Queue Progression:** Check if additional pending tickets exist in the project backlog via `python3 dev-kit/tools/jira_sync.py next [PROJECT_KEY]`. Report completion and prompt or transition seamlessly to the next ticket.

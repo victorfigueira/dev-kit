@@ -20,6 +20,23 @@ Concise overview of what was built or resolved.
 
 ---
 
+## Development Cost & Token Metrics
+
+- **AI Model:** [e.g. Claude 3.7 Sonnet / Gemini 2.5 Pro]
+- **Total Tokens:** `[Total Tokens]` (`[Input Tokens]` input · `[Output Tokens]` output)
+- **Total Development Cost:** **`$[Total Cost] USD`**
+
+| Squad Role / Phase | Input Tokens | Output Tokens | Total Tokens | Cost (USD) |
+|---|---|---|---|---|
+| **Project Manager & Tech Lead** | `0` | `0` | `0` | `$0.0000` |
+| **Database Engineer (DBA)** | `0` | `0` | `0` | `$0.0000` |
+| **Backend Developer** | `0` | `0` | `0` | `$0.0000` |
+| **Frontend Developer** | `0` | `0` | `0` | `$0.0000` |
+| **QA Engineer (Quality Gate)** | `0` | `0` | `0` | `$0.0000` |
+| **Total Squad Execution** | **`0`** | **`0`** | **`0`** | **`$[Total Cost] USD`** |
+
+---
+
 ## Technical Details
 
 ### Architectural Scope

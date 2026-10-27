@@ -142,6 +142,9 @@ python3 dev-kit/tools/jira_sync.py comment <TICKET_KEY> "PR ready with tests pas
 # Check and install dev-kit updates
 python3 dev-kit/tools/updater.py check [--json]
 python3 dev-kit/tools/updater.py update
+
+# Calculate and report token consumption & development cost in USD
+python3 dev-kit/tools/cost_tracker.py report [--model MODEL] [--json]
 ```
 
 ---

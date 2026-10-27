@@ -37,5 +37,5 @@ The unified entry point for `dev-kit`. Follows the execution protocol in `dev-ki
 
 6. **Delivery & Queue Progression:**
    - Create atomic conventional commit.
-   - Generate `dev/PULL_REQUEST.md` with the Squad Delivery & Quality Gate Scorecard.
+   - Generate `dev/PULL_REQUEST.md` with the Squad Delivery Scorecard and Development Cost & Token metrics (`python3 dev-kit/tools/cost_tracker.py report`).
    - Transition Jira ticket to *In Review* and report the next available ticket from the backlog.

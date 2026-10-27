@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 – 27/10/2026
+- Added Token & USD Cost Calculation Engine (`tools/cost_tracker.py`) with support for Claude, Gemini, and OpenAI models.
+- Added comprehensive unit test suite in `tools/cost_tracker_test.py`.
+- Integrated token usage and USD cost reporting into `templates/PULL_REQUEST.md` and chat completion summaries.
+- Updated `RUN.md` Step 6 and Step 7, `agents/pm.md`, `README.md`, and `docs/GUIDE.md` with cost estimation protocols.
+
 ## 0.3.0 – 27/10/2026
 - Added self-updating engine (`tools/updater.py`) for automatic version checking and seamless one-click installation of updates.
 - Integrated update verification into `/dev` workflow (Step 0): checks GitHub for newer releases and prompts the user before proceeding.

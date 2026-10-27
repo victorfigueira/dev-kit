@@ -11,4 +11,4 @@ Take a Jira ticket, feature brief, or autonomously ingest the next ticket from t
    - `backend-dev` (`dev-kit/agents/backend.md`)
    - `frontend-dev` (`dev-kit/agents/frontend.md`)
 6. Verify with `qa-verifier` (`dev-kit/agents/qa.md`) via `python3 dev-kit/tools/test_runner.py --typecheck --lint`.
-7. Once green, commit, output `dev/PULL_REQUEST.md` with the Quality Gate Scorecard, transition Jira ticket, and report next queue item.
+7. Once green, commit, output `dev/PULL_REQUEST.md` with the Quality Gate Scorecard and Cost & Token metrics (`python3 dev-kit/tools/cost_tracker.py report`), transition Jira ticket, and report next queue item.

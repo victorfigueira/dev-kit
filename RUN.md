@@ -139,7 +139,11 @@ Once QA approves:
    git add .
    git commit -m "feat(<scope>): <concise description of changes>"
    ```
-2. Write `dev/PULL_REQUEST.md` using `dev-kit/templates/PULL_REQUEST.md`, populating the Squad Delivery & Quality Gate Scorecard.
+2. Calculate token and USD development cost:
+   ```bash
+   python3 dev-kit/tools/cost_tracker.py report
+   ```
+   Embed the cost table and token metrics into `dev/PULL_REQUEST.md` using `dev-kit/templates/PULL_REQUEST.md`.
 3. If Jira is configured, post comment and transition to *In Review*:
    ```bash
    python3 dev-kit/tools/jira_sync.py transition <TICKET_KEY> "In Review"
@@ -155,6 +159,7 @@ Delivery Scorecard:
   • Backend: [<n> endpoints · <n> unit tests]
   • Frontend: [<n> components · 4 states verified]
   • Quality Gate: 🟢 APPROVED (<n> tests green · typecheck clean · lint clean)
+Cost: $0.27 USD (48,250 tokens · Claude 3.7 Sonnet)
 Acceptance Criteria: All <n> criteria verified
 Pull Request summary: dev/PULL_REQUEST.md
 Jira: [TICKET_KEY] transitioned to In Review
