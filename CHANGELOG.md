@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1 – 27/10/2026
+- Enforced Autonomous Continuous Sprint Mode in `/dev`: when run without ticket arguments, the Tech Lead automatically switches back to the base branch and proceeds to the next backlog ticket without pausing or waiting for another user prompt.
+- Added Step 8 in `RUN.md` defining the continuous backlog auto-progression loop.
+- Updated `agents/pm.md`, `adapters/antigravity/skills/dev/SKILL.md`, `adapters/claude/commands/dev.md`, and `adapters/cursor/rules/dev.mdc`.
+
 ## 0.4.0 – 27/10/2026
 - Added Token & USD Cost Calculation Engine (`tools/cost_tracker.py`) with support for Claude, Gemini, and OpenAI models.
 - Added comprehensive unit test suite in `tools/cost_tracker_test.py`.

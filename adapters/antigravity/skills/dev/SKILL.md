@@ -1,6 +1,6 @@
 ---
 name: dev
-description: Autonomous engineering squad orchestrator. Checks for updates, queries sprint backlogs automatically, coordinates specialized developers, and enforces QA Quality Gate.
+description: Autonomous engineering squad orchestrator. Checks for updates, executes tickets, and continuously iterates through sprint backlogs automatically.
 ---
 
 # Autonomous Engineering Squad (`/dev`)
@@ -16,8 +16,11 @@ The unified entry point for `dev-kit`. Follows the execution protocol in `dev-ki
    - If `dev/project-context.md` does not exist, automatically inspect the codebase (`package.json`, `pyproject.toml`, folder structure, test runners, migrations) and initialize `dev/project-context.md`.
 
 2. **Ticket & Backlog Ingestion:**
-   - **With Argument (`/dev <TICKET_KEY>` or `/dev "<DESCRIPTION>"`):** Ingests the specified ticket or user requirement.
-   - **Without Argument (`/dev`):** The Tech Lead reads the `project_key` from `dev/project-context.md`, queries `python3 dev-kit/tools/jira_sync.py backlog [PROJECT_KEY]`, and automatically selects the highest-priority active ticket (`In Progress` or top `To Do`).
+   - **With Argument (`/dev <TICKET_KEY>`):** Ingests and executes only the specified ticket.
+   - **Without Argument (`/dev`):** The Tech Lead enters **Continuous Backlog Mode**:
+     * Reads `project_key` from `dev/project-context.md`.
+     * Queries `python3 dev-kit/tools/jira_sync.py backlog [PROJECT_KEY]`.
+     * Automatically picks the top-priority ticket to begin the sprint.
 
 3. **Technical Plan & Branching (`agents/pm.md`):**
    - Formulate `dev/PLAN.md` with problem statement, explicit Acceptance Criteria, and the Squad Delivery Matrix.
@@ -35,7 +38,9 @@ The unified entry point for `dev-kit`. Follows the execution protocol in `dev-ki
      ```
    - Audit test authenticity and verify 100% of Acceptance Criteria.
 
-6. **Delivery & Queue Progression:**
-   - Create atomic conventional commit.
-   - Generate `dev/PULL_REQUEST.md` with the Squad Delivery Scorecard and Development Cost & Token metrics (`python3 dev-kit/tools/cost_tracker.py report`).
-   - Transition Jira ticket to *In Review* and report the next available ticket from the backlog.
+6. **Delivery & Continuous Auto-Progression (DO NOT STOP):**
+   - Create atomic conventional commit and push feature branch: `git push origin feat/<TICKET_KEY>-<slug>`.
+   - Generate `dev/PULL_REQUEST.md` (and preserve `dev/PR_<TICKET_KEY>.md`) with Scorecard and Cost metrics (`python3 dev-kit/tools/cost_tracker.py report`).
+   - Transition Jira ticket status to *In Review* / *Done*.
+   - Print completion summary in chat.
+   - **Continuous Progression:** If running in Backlog Mode (`/dev`), **do not wait for another user prompt**. Return to base branch (`git checkout <BASE_BRANCH> && git pull origin <BASE_BRANCH>`), query the next ticket via `python3 dev-kit/tools/jira_sync.py next [PROJECT_KEY]`, and immediately proceed to implement it. Repeat until all sprint tickets are resolved or blocked.

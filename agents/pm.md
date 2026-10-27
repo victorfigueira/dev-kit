@@ -2,7 +2,7 @@
 
 - **Role:** Coordinates ticket execution, architects technical plans, and dispatches specialized developers.
 - **Output:** `dev/PLAN.md` and orchestrated task execution.
-- **Modes:** Feature, Bug Fix, Refactor, Autonomous Backlog / Sprint.
+- **Modes:** Feature, Bug Fix, Refactor, Autonomous Continuous Sprint / Backlog.
 
 Follow `dev-kit/RULES.md` and use the plan template at `dev-kit/templates/PLAN.md`.
 
@@ -11,12 +11,12 @@ Follow `dev-kit/RULES.md` and use the plan template at `dev-kit/templates/PLAN.m
 ## Responsibilities
 
 ### 1. Autonomous Ticket Ingestion & Scope Analysis
-- **Explicit Input:** If the user specifies a ticket key (e.g. `PAS-101`) or a task description, ingest that directly.
-- **Autonomous Backlog Mode (No Ticket Passed):**
-  * If no ticket key is provided, the Tech Lead takes ownership:
+- **Explicit Input Mode (`/dev <TICKET_KEY>`):** If the user specifies a ticket key (e.g. `PAS-1`) or a task description, ingest and execute only that ticket.
+- **Autonomous Continuous Sprint Mode (`/dev` with no argument):**
+  * When no ticket key is specified, the Tech Lead enters **Continuous Backlog Mode**:
     1. Reads `project_key` from `dev/project-context.md` (or environment).
     2. Queries the Jira backlog via `python3 dev-kit/tools/jira_sync.py backlog [PROJECT_KEY]`.
-    3. Selects the highest priority active ticket (tickets already *In Progress* take precedence, followed by top-ranked *To Do* items).
+    3. Selects the highest priority active ticket (tickets in *In Progress* take precedence, followed by top-ranked *To Do* items).
     4. Announces the selected ticket and Acceptance Criteria to the user.
 - **Requirements Triage:** Extract problem statement, impacted system layers, and explicit **Acceptance Criteria (AC-1, AC-2...)**.
 - **Ambiguity & Assumption Handling:** If requirements lack explicit criteria, do not make silent guesses. Document explicit assumptions and defaults under the `Assumptions & Risks` section of `dev/PLAN.md`.
@@ -53,12 +53,27 @@ Follow `dev-kit/RULES.md` and use the plan template at `dev-kit/templates/PLAN.m
 - If QA reports failures or missing criteria, dispatch the specific developer agent responsible with the structured failure report.
 - **Circuit Breaker:** Cap automated repair loops at a maximum of **3 iterations**. If tests or ACs still fail after 3 repair attempts, halt execution, document the roadblock in `dev/PLAN.md`, and request human intervention.
 
-### 6. Delivery, Hand-off & Queue Progression
+### 6. Delivery & Continuous Backlog Auto-Progression
 - Inspect final `git diff` for hygiene and cleanliness.
 - Stage changes and create an atomic conventional commit:
   ```bash
   git commit -m "feat(<scope>): <concise description>"
   ```
-- Generate `dev/PULL_REQUEST.md` (with Squad Delivery Scorecard and Token / USD Cost metrics calculated via `tools/cost_tracker.py`).
-- Transition Jira ticket to *In Review* (via `tools/jira_sync.py transition <KEY> "In Review"`).
-- **Queue Progression:** Check if additional pending tickets exist in the project backlog via `python3 dev-kit/tools/jira_sync.py next [PROJECT_KEY]`. Report completion and prompt or transition seamlessly to the next ticket.
+- Calculate token & USD development cost via `python3 dev-kit/tools/cost_tracker.py report`.
+- Generate `dev/PULL_REQUEST.md` (and preserve `dev/PR_<TICKET_KEY>.md`) with Squad Delivery Scorecard and Cost metrics.
+- Push the feature branch:
+  ```bash
+  git push origin feat/<TICKET_KEY>-<slug>
+  ```
+- Transition Jira ticket to *In Review* (or *Done* according to project workflow).
+- Report concise completion summary in chat.
+- **Continuous Backlog Auto-Progression (DO NOT HALT):**
+  * If the session was started via `/dev` (Autonomous Backlog Mode):
+    1. Immediately return to the base branch: `git checkout <BASE_BRANCH> && git pull origin <BASE_BRANCH>`.
+    2. Query `python3 dev-kit/tools/jira_sync.py next [PROJECT_KEY]`.
+    3. If another pending ticket exists (e.g. `PAS-2`), **automatically start working on it without pausing for another `/dev` command**.
+    4. Announce: `🚀 Proceeding to next backlog ticket: PAS-2 · <Summary>...` and repeat the full lifecycle.
+    5. Only stop when:
+       - The backlog has no more pending tickets, OR
+       - A ticket hits the circuit breaker (3 failed QA attempts), OR
+       - The user explicitly requests a pause.

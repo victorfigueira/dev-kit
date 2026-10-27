@@ -144,7 +144,11 @@ Once QA approves:
    python3 dev-kit/tools/cost_tracker.py report
    ```
    Embed the cost table and token metrics into `dev/PULL_REQUEST.md` using `dev-kit/templates/PULL_REQUEST.md`.
-3. If Jira is configured, post comment and transition to *In Review*:
+3. Push the feature branch to origin:
+   ```bash
+   git push origin feat/<TICKET_KEY>-<slug>
+   ```
+4. If Jira is configured, post comment and transition to *In Review*:
    ```bash
    python3 dev-kit/tools/jira_sync.py transition <TICKET_KEY> "In Review"
    ```
@@ -164,3 +168,19 @@ Acceptance Criteria: All <n> criteria verified
 Pull Request summary: dev/PULL_REQUEST.md
 Jira: [TICKET_KEY] transitioned to In Review
 ```
+
+### Step 8: Continuous Backlog Auto-Progression (Do Not Halt)
+When running in Autonomous Backlog Mode (`/dev` without a specific ticket key):
+1. **Never wait for another user `/dev` command.**
+2. Switch back to base branch:
+   ```bash
+   git checkout <BASE_BRANCH> && git pull origin <BASE_BRANCH>
+   ```
+3. Query the next ticket:
+   ```bash
+   python3 dev-kit/tools/jira_sync.py next
+   ```
+4. If another pending ticket exists (e.g. `PAS-2`), announce:
+   `"🚀 Proceeding to next backlog ticket: PAS-2 · <Summary>..."`
+   and immediately begin executing Step 2 for `PAS-2`.
+5. Repeat this loop automatically until all sprint tickets are resolved, a QA circuit-breaker halts execution, or the user pauses.
