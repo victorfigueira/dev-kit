@@ -13,6 +13,7 @@ Usage:
 """
 import argparse
 import datetime
+import glob
 import json
 import os
 import re
@@ -25,6 +26,10 @@ MODEL_PRICING = {
     "claude-3-5-sonnet": {"input": 3.00, "output": 15.00, "name": "Claude 3.5 Sonnet"},
     "claude-3-5-haiku": {"input": 0.80, "output": 4.00, "name": "Claude 3.5 Haiku"},
     "claude-3-opus": {"input": 15.00, "output": 75.00, "name": "Claude 3 Opus"},
+    "gemini-3.8-flash": {"input": 0.10, "output": 0.40, "name": "Gemini 3.8 Flash"},
+    "gemini-3.8-flash-medium": {"input": 0.10, "output": 0.40, "name": "Gemini 3.8 Flash (Medium)"},
+    "gemini-3.8-flash-high": {"input": 0.10, "output": 0.40, "name": "Gemini 3.8 Flash (High)"},
+    "gemini-3.8-pro": {"input": 1.25, "output": 5.00, "name": "Gemini 3.8 Pro"},
     "gemini-2.5-pro": {"input": 1.25, "output": 5.00, "name": "Gemini 2.5 Pro"},
     "gemini-2.0-flash": {"input": 0.10, "output": 0.40, "name": "Gemini 2.0 Flash"},
     "gemini-1.5-pro": {"input": 1.25, "output": 5.00, "name": "Gemini 1.5 Pro"},
@@ -55,58 +60,109 @@ def get_costs_md_path():
     return os.path.join(cwd, "dev", "COSTS.md")
 
 
-def resolve_model_key(name):
-    """Map model name or alias to standard key."""
-    if not name:
-        return None
-    clean = name.lower().strip()
-    for k in MODEL_PRICING:
-        if k in clean or clean in k:
-            return k
-    if "flash" in clean:
-        return "gemini-2.0-flash"
-    if "gemini" in clean and "pro" in clean:
-        return "gemini-2.5-pro"
-    if "gemini" in clean:
-        return "gemini-2.0-flash"
-    if "opus" in clean:
-        return "claude-3-opus"
-    if "haiku" in clean:
-        return "claude-3-5-haiku"
-    if "claude" in clean or "sonnet" in clean:
-        return "claude-3-7-sonnet"
+def detect_antigravity_model():
+    """Inspect Antigravity session transcript to extract the exact model chosen by the user."""
+    app_data_dir = os.environ.get("ANTIGRAVITY_APP_DATA_DIR", os.path.expanduser("~/.gemini/antigravity"))
+    conv_id = os.environ.get("ANTIGRAVITY_CONVERSATION_ID")
+
+    candidates = []
+    if conv_id:
+        candidates.append(os.path.join(app_data_dir, "brain", conv_id, ".system_generated", "logs", "transcript.jsonl"))
+        candidates.append(os.path.join(app_data_dir, "brain", conv_id, ".system_generated", "logs", "transcript_full.jsonl"))
+
+    # Also search recently active transcripts in brain directory
+    brain_dir = os.path.join(app_data_dir, "brain")
+    if os.path.exists(brain_dir):
+        try:
+            files = glob.glob(os.path.join(brain_dir, "*", ".system_generated", "logs", "transcript.jsonl"))
+            files.sort(key=os.path.getmtime, reverse=True)
+            for f in files[:5]:
+                if f not in candidates:
+                    candidates.append(f)
+        except Exception:
+            pass
+
+    pattern = re.compile(r"Model Selection[`\x60]?\s+from\s+.*?\s+to\s+([A-Za-z0-9. ()-]+?)(?:\.\s+[A-Z]|\.\s*</|\.$|\n|$)")
+
+    for cand in candidates:
+        if not os.path.exists(cand):
+            continue
+        try:
+            with open(cand, "r", encoding="utf-8", errors="replace") as f:
+                last_model = None
+                for line in f:
+                    if "Model Selection" in line:
+                        m = pattern.search(line)
+                        if m:
+                            last_model = m.group(1).strip()
+                if last_model:
+                    return last_model
+        except Exception:
+            pass
     return None
 
 
+def get_model_info(model_identifier):
+    """Resolve pricing rates and human-readable name for any model string."""
+    if not model_identifier:
+        return MODEL_PRICING[DEFAULT_MODEL]
+
+    clean = model_identifier.lower().strip()
+
+    # Exact key match
+    if clean in MODEL_PRICING:
+        return MODEL_PRICING[clean]
+
+    # Display name match
+    for k, v in MODEL_PRICING.items():
+        if v["name"].lower() == clean:
+            return v
+
+    # Dynamic pricing mapping for discovered models
+    if "flash" in clean:
+        return {"input": 0.10, "output": 0.40, "name": model_identifier}
+    elif "pro" in clean and ("gemini" in clean or "google" in clean):
+        return {"input": 1.25, "output": 5.00, "name": model_identifier}
+    elif "opus" in clean:
+        return {"input": 15.00, "output": 75.00, "name": model_identifier}
+    elif "haiku" in clean:
+        return {"input": 0.80, "output": 4.00, "name": model_identifier}
+    elif "sonnet" in clean or "claude" in clean:
+        return {"input": 3.00, "output": 15.00, "name": model_identifier}
+    elif "gpt-4o-mini" in clean or "mini" in clean:
+        return {"input": 0.15, "output": 0.60, "name": model_identifier}
+    elif "gpt-4" in clean:
+        return {"input": 2.50, "output": 10.00, "name": model_identifier}
+
+    return {"input": 1.00, "output": 3.00, "name": model_identifier}
+
+
 def detect_active_model(model_override=None):
-    """Detect current model from override, environment, platform or default."""
+    """Detect current model from override, environment, platform transcript, or default."""
     # 1. Explicit argument override
     if model_override:
-        matched = resolve_model_key(model_override)
-        if matched:
-            return matched
+        return model_override.strip()
 
     # 2. Environment variables
     env_model = os.environ.get("DEV_KIT_MODEL") or os.environ.get("GEMINI_MODEL") or os.environ.get("CLAUDE_MODEL") or os.environ.get("AI_MODEL")
     if env_model:
-        matched = resolve_model_key(env_model)
-        if matched:
-            return matched
+        return env_model.strip()
 
-    # 3. Environment autodetection: Antigravity / Gemini platform
-    if os.environ.get("ANTIGRAVITY_AGENT") or os.environ.get("ANTIGRAVITY_CONVERSATION_ID") or os.environ.get("GEMINI_CLI"):
-        return "gemini-2.0-flash"
+    # 3. Dynamic Antigravity Transcript Detection
+    ag_model = detect_antigravity_model()
+    if ag_model:
+        return ag_model
 
     # 4. Environment autodetection: Claude Code
     if os.environ.get("CLAUDE_CODE") or os.environ.get("USER_AGENT_CLAUDE"):
-        return "claude-3-7-sonnet"
+        return "Claude 3.7 Sonnet"
 
     return DEFAULT_MODEL
 
 
 def calculate_cost(input_tokens, output_tokens, model_key=DEFAULT_MODEL):
     """Calculate exact USD cost for given token counts."""
-    pricing = MODEL_PRICING.get(model_key, MODEL_PRICING[DEFAULT_MODEL])
+    pricing = get_model_info(model_key)
     in_cost = (input_tokens / 1_000_000.0) * pricing["input"]
     out_cost = (output_tokens / 1_000_000.0) * pricing["output"]
     return round(in_cost + out_cost, 4)
@@ -121,7 +177,7 @@ def load_session_data():
                 return json.load(f)
         except Exception:
             pass
-    return {"layers": {}, "model": DEFAULT_MODEL}
+    return {"layers": {}, "model": None}
 
 
 def save_session_data(data):
@@ -204,7 +260,7 @@ def estimate_from_diff(base_branch=None, model_override=None):
         total_out += out_tokens
 
     total_cost = calculate_cost(total_in, total_out, model_key)
-    pricing = MODEL_PRICING.get(model_key, MODEL_PRICING[DEFAULT_MODEL])
+    pricing = get_model_info(model_key)
 
     return {
         "model_key": model_key,
@@ -222,8 +278,9 @@ def estimate_from_diff(base_branch=None, model_override=None):
 def generate_cost_report(model_override=None):
     """Generate final cost summary from recorded session data or fallback to estimate."""
     data = load_session_data()
-    model_key = detect_active_model(model_override or data.get("model"))
-    pricing = MODEL_PRICING.get(model_key, MODEL_PRICING[DEFAULT_MODEL])
+    chosen_model = model_override or (data.get("model") if data.get("layers") else None)
+    model_key = detect_active_model(chosen_model)
+    pricing = get_model_info(model_key)
 
     if not data.get("layers"):
         return estimate_from_diff(model_override=model_key)
