@@ -41,7 +41,8 @@ Follow `dev-kit/RULES.md` and use the plan template at `dev-kit/templates/PLAN.m
   ```
 
 ### 4. Agent Dispatching & Context Handoff
-- Dispatch specialized agents sequentially using subagent calls (`invoke_subagent` in Antigravity or subagent dispatching in Claude Code).
+- Dispatch specialized agents sequentially as subagents: in Claude Code the `database-engineer`, `backend-dev`, `frontend-dev` and `qa-verifier` subagents from `.claude/agents/`; in Antigravity `invoke_subagent` (see "Subagents" in `dev-kit/RUN.md`).
+- Start every subagent prompt with the line `dev-kit-agent: <name>` (`database`, `backend`, `frontend`, `qa`).
 - **Context Handoff Bundle:** Provide each subagent with:
   * The path to `dev/PLAN.md` and their specific assigned task steps.
   * The subset of Acceptance Criteria IDs they are responsible for.

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.0 – 28/10/2026
+- Added Claude Code subagents (DK-4): `pm`, `database-engineer`, `backend-dev`, `frontend-dev` and `qa-verifier` in `adapters/claude/agents/`, each pointing to its file in `agents/`, with restricted tool lists; `qa-verifier` cannot edit files.
+- `install.sh` installs them into `.claude/agents/` and skips any existing file with the same name that is not a dev-kit adapter.
+- `RUN.md` gained a "Subagents" section: the main session orchestrates, the `pm` subagent writes `dev/PLAN.md`, and every subagent prompt starts with `dev-kit-agent: <name>` for per-role token attribution, followed by a handoff bundle.
+
 ## 0.6.0 – 28/10/2026
 - Added human checkpoints (DK-3): the squad waits for plan approval before creating the branch, writing code or moving the Jira ticket to *In Progress*, and for delivery approval before pushing, commenting on Jira or moving the ticket to *In Review*.
 - `/dev` without a ticket key now proposes the top backlog ticket and waits for confirmation. Continuous backlog progression is opt-in with `continuous`; `unattended` skips both checkpoints and is never assumed.

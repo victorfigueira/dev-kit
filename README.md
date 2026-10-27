@@ -1,6 +1,6 @@
 # dev-kit
 
-Current version: **0.6.0** (see `CHANGELOG.md`). Full documentation: [docs/GUIDE.md](docs/GUIDE.md). Protocol & workflow: [RUN.md](RUN.md).
+Current version: **0.7.0** (see `CHANGELOG.md`). Full documentation: [docs/GUIDE.md](docs/GUIDE.md). Protocol & workflow: [RUN.md](RUN.md).
 
 A portable autonomous software engineering squad: a **Project Manager & Tech Lead** orchestrator, specialized developers (**Database**, **Backend**, **Frontend**), and an independent **QA Engineer** quality gate that guarantees test suites pass and acceptance criteria are met before opening Pull Requests.
 
@@ -18,7 +18,7 @@ From the root of the project you want to develop on:
 curl -fsSL https://raw.githubusercontent.com/victorfigueira/dev-kit/main/get.sh | bash
 ```
 
-This downloads the kit into `dev-kit/` and installs the commands for Claude Code, Antigravity, and Cursor. For one tool only, add its name at the end: `| bash -s -- antigravity` (or `claude`, `cursor`). To pin a version, put `DEV_KIT_REF=v0.6.0` before `bash`.
+This downloads the kit into `dev-kit/` and installs the commands for Claude Code, Antigravity, and Cursor. For one tool only, add its name at the end: `| bash -s -- antigravity` (or `claude`, `cursor`). To pin a version, put `DEV_KIT_REF=v0.7.0` before `bash`.
 
 Keep squad working plans, temporary files, and the kit copy out of git:
 
@@ -115,6 +115,8 @@ flowchart TD
 | **Frontend Developer** | `agents/frontend.md` | Reusable UI components, client state, styling tokens, and accessibility (a11y). | Mandatory implementation of all 4 states (Loading, Error, Empty, Success), mirrored form validation, and error boundaries. |
 | **QA Engineer (Quality Gate)** | `agents/qa.md` | Independent verification: executes test suites via `test_runner.py`, verifies all ACs, and inspects `git diff`. | Zero failing tests policy. Rejects tautological tests and produces structured remediation reports. |
 
+In Claude Code each role runs as its own subagent (`pm`, `database-engineer`, `backend-dev`, `frontend-dev`, `qa-verifier`) with a restricted tool list: the QA verifier cannot edit files. In Antigravity the orchestrator launches them with `invoke_subagent`. Every subagent prompt starts with `dev-kit-agent: <name>` so token usage can be attributed per role. See "Subagents" in [RUN.md](RUN.md).
+
 ---
 
 ## The 6-Stage Engineering Lifecycle
@@ -166,7 +168,7 @@ Database changes are the most critical operations in software engineering. `dev-
 | Tool | Files Installed in Your Project |
 |---|---|
 | **Antigravity** | `.agents/skills/{dev,dev-feature,dev-qa,dev-check-update}/SKILL.md` |
-| **Claude Code** | `.claude/commands/{dev,dev-feature,dev-qa,dev-check-update}.md` |
+| **Claude Code** | `.claude/commands/{dev,dev-feature,dev-qa,dev-check-update}.md`, `.claude/agents/{pm,database-engineer,backend-dev,frontend-dev,qa-verifier}.md` |
 | **Cursor** | `.cursor/rules/dev.mdc` |
 | **Shared** | `dev/project-context.md` |
 

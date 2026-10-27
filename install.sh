@@ -18,9 +18,20 @@ fi
 echo "🚀 Installing dev-kit adapters into: $TARGET_DIR"
 
 install_claude() {
-    mkdir -p "$TARGET_DIR/.claude/commands"
+    mkdir -p "$TARGET_DIR/.claude/commands" "$TARGET_DIR/.claude/agents"
     cp "$KIT_DIR/adapters/claude/commands/"*.md "$TARGET_DIR/.claude/commands/"
     echo "  ✓ Claude Code commands installed: /dev, /dev-feature, /dev-qa, /dev-check-update"
+
+    # Subagents: an existing file with the same name is replaced only if it is a dev-kit adapter.
+    for f in "$KIT_DIR/adapters/claude/agents/"*.md; do
+        local dest="$TARGET_DIR/.claude/agents/$(basename "$f")"
+        if [ -e "$dest" ] && ! cmp -s "$f" "$dest" && ! grep -q "dev-kit/" "$dest"; then
+            echo "  skip (not a dev-kit file): $dest"
+        else
+            cp "$f" "$dest"
+        fi
+    done
+    echo "  ✓ Claude Code subagents installed: pm, database-engineer, backend-dev, frontend-dev, qa-verifier"
 }
 
 install_antigravity() {

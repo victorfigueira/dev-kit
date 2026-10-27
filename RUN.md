@@ -23,6 +23,25 @@ The squad stops and waits for the user at two points. Without a clear yes it doe
 
 The user may approve part of a checkpoint (for example "push, but leave Jira alone"); do only what was approved. Approval of one ticket never carries over to the next.
 
+## Subagents
+
+The main session is the orchestrator: it follows this file, talks to the user at the checkpoints and runs git and Jira commands. Each specialist runs as a subagent in its own context.
+
+| Agent file | Claude Code subagent | Used in | Tools |
+|---|---|---|---|
+| `agents/pm.md` | `pm` | Step 2 (writes `dev/PLAN.md`) | Read, Grep, Glob, Bash, Write |
+| `agents/database.md` | `database-engineer` | Step 4 | Read, Grep, Glob, Bash, Edit, Write |
+| `agents/backend.md` | `backend-dev` | Step 4 | Read, Grep, Glob, Bash, Edit, Write |
+| `agents/frontend.md` | `frontend-dev` | Step 4 | Read, Grep, Glob, Bash, Edit, Write |
+| `agents/qa.md` | `qa-verifier` | Step 5 | Read, Grep, Glob, Bash (no edits) |
+
+- **Prompt header.** The first line of every subagent prompt is `dev-kit-agent: <name>`, where `<name>` is the agent file without `.md` (`pm`, `database`, `backend`, `frontend`, `qa`). Token reporting uses this header to attribute usage to each role.
+- **Handoff bundle.** After the header, give the subagent: the path to `dev/PLAN.md` and its steps, the Acceptance Criteria IDs it owns, the exact files it may touch, and `dev/project-context.md`. For a QA rerun or a fix, add the previous `CHANGES REQUESTED` report.
+- **Claude Code:** launch the subagents installed in `.claude/agents/`. Their tool lists are enforced by Claude Code.
+- **Antigravity:** `invoke_subagent(TypeName='self', Role='<Role>', Prompt='dev-kit-agent: <name>\n...', Workspace='inherit')`.
+- **Tools without subagents:** play each role in turn, rereading its file in `dev-kit/agents/` and `dev-kit/RULES.md` at the start of each role, and keep the QA review independent of what you concluded while building.
+- Specialists run one at a time in dependency order (database, backend, frontend), because each builds on the previous one's output.
+
 ---
 
 ## The Workflow
@@ -102,6 +121,7 @@ Skip this step only if the user wrote `no-update` with the command.
 3. Read `dev/project-context.md` to verify tech stack, base branch, package manager, and test commands.
 
 ### Step 2: Formulate Technical Plan
+Dispatch the `pm` subagent (header `dev-kit-agent: pm`) with the ticket and its Acceptance Criteria to do items 1 to 3; the main session runs Checkpoint 1 (item 4).
 1. Create `dev/` directory if missing.
 2. Copy `dev-kit/templates/PLAN.md` to `dev/PLAN.md`.
 3. Fill in:
@@ -130,7 +150,7 @@ Skip this step only if the user wrote `no-update` with the command.
    ```
 
 ### Step 4: Dispatch Specialized Developers
-Dispatch the required specialists in sequential dependency order:
+Dispatch the required specialists as subagents (see "Subagents" above), one at a time in dependency order:
 
 1. **Database Layer (`dev-kit/agents/database.md`)**:
    - *When needed:* Schema alterations, new tables, migrations, database queries.
@@ -148,7 +168,7 @@ Dispatch the required specialists in sequential dependency order:
    - Ensures accessibility (a11y) and responsive design.
 
 ### Step 5: Quality Gate & Verification (`dev-kit/agents/qa.md`)
-Run the independent quality gate:
+Dispatch the `qa-verifier` subagent (header `dev-kit-agent: qa`). It runs the independent quality gate:
 ```bash
 python3 dev-kit/tools/test_runner.py --typecheck --lint
 ```

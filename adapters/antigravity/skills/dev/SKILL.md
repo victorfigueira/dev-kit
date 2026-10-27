@@ -17,4 +17,4 @@ Follow `dev-kit/RUN.md` exactly.
 Stop and wait for the user at Checkpoint 1 (plan approval, before branch, code or Jira changes) and Checkpoint 2 (delivery approval, before push, Jira comment or transition), unless the user passed `unattended`.
 
 ## Subagents
-Dispatch the specialists in RUN.md Step 4 with `invoke_subagent`, one at a time in dependency order, each reading its own file in `dev-kit/agents/`.
+Dispatch the specialists with `invoke_subagent`, one at a time in dependency order, each reading its own file in `dev-kit/agents/`. The first line of every prompt is `dev-kit-agent: <name>` (see "Subagents" in `dev-kit/RUN.md`).

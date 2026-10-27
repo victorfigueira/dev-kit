@@ -162,6 +162,8 @@ python3 dev-kit/tools/cost_tracker.py report [--model MODEL] [--json]
 
 ## 5. The Engineering Squad
 
+The main session orchestrates and each role runs as a subagent in its own context. Claude Code installs them in `.claude/agents/` with restricted tools (`pm` and the developers can write; `qa-verifier` is read-only). Antigravity launches them with `invoke_subagent`. Every subagent prompt starts with `dev-kit-agent: <name>` (`pm`, `database`, `backend`, `frontend`, `qa`). If an existing `.claude/agents/<name>.md` in your project is not a dev-kit file, the installer leaves it alone and says so.
+
 ### Project Manager & Tech Lead (`pm`)
 * **File:** `dev-kit/agents/pm.md`
 * **Role:** Architectural planning, task sequencing, and squad dispatch.
