@@ -1,6 +1,6 @@
 ---
 name: dev
-description: Autonomous engineering squad orchestrator. Ingests Jira tickets, queries sprint backlogs automatically, coordinates specialized developers, and enforces QA Quality Gate.
+description: Autonomous engineering squad orchestrator. Checks for updates, queries sprint backlogs automatically, coordinates specialized developers, and enforces QA Quality Gate.
 ---
 
 # Autonomous Engineering Squad (`/dev`)
@@ -9,7 +9,10 @@ The unified entry point for `dev-kit`. Follows the execution protocol in `dev-ki
 
 ## Workflow
 
-1. **Context Auto-Detection:**
+1. **Update Check & Context Auto-Detection:**
+   - Check for updates: `python3 dev-kit/tools/updater.py check --json`. If an update is available, prompt the user:
+     `"🔔 A new version of dev-kit is available: v<current> ➔ v<latest>. Would you like to update? [Yes / Skip]"`
+     If accepted, run `python3 dev-kit/tools/updater.py update`.
    - If `dev/project-context.md` does not exist, automatically inspect the codebase (`package.json`, `pyproject.toml`, folder structure, test runners, migrations) and initialize `dev/project-context.md`.
 
 2. **Ticket & Backlog Ingestion:**

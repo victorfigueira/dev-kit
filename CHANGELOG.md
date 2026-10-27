@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 – 27/10/2026
+- Added self-updating engine (`tools/updater.py`) for automatic version checking and seamless one-click installation of updates.
+- Integrated update verification into `/dev` workflow (Step 0): checks GitHub for newer releases and prompts the user before proceeding.
+- Added comprehensive unit test suite in `tools/updater_test.py`.
+- Updated `RUN.md`, `README.md`, and `docs/GUIDE.md` with self-updating commands and documentation.
+
 ## 0.2.0 – 27/10/2026
 - Unified `/dev` command: single intuitive entry point across Antigravity, Claude Code, and Cursor (`/dev-feature` preserved as alias).
 - Autonomous Backlog Orchestration: Tech Lead automatically queries and ranks Jira sprint backlogs (`python3 tools/jira_sync.py backlog` and `next`) when no ticket key is passed.

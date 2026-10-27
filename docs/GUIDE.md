@@ -138,6 +138,10 @@ python3 dev-kit/tools/jira_sync.py transition <TICKET_KEY> "In Progress"
 
 # Post comment with PR test summary
 python3 dev-kit/tools/jira_sync.py comment <TICKET_KEY> "PR ready with tests passing."
+
+# Check and install dev-kit updates
+python3 dev-kit/tools/updater.py check [--json]
+python3 dev-kit/tools/updater.py update
 ```
 
 ---

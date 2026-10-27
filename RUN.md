@@ -54,6 +54,20 @@ sequenceDiagram
 
 ## Step-by-step Instructions
 
+### Step 0: Check for dev-kit Updates
+1. Check if a newer version of `dev-kit` is available:
+   ```bash
+   python3 dev-kit/tools/updater.py check --json
+   ```
+2. If `update_available` is true:
+   - Prompt the user in chat:
+     `"🔔 A new version of dev-kit is available: v<current> ➔ v<latest>. Would you like to update dev-kit before proceeding? [Yes / Skip]"`
+   - If user accepts:
+     ```bash
+     python3 dev-kit/tools/updater.py update
+     ```
+   - If skipped or offline, continue immediately with the current version.
+
 ### Step 1: Ingest Ticket & Context
 1. If `dev/project-context.md` does not exist, automatically inspect the repository (`package.json`, test scripts, migrations) and initialize it.
 2. Ingest the task:
