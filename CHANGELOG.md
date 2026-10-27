@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.4 – 27/10/2026
+- Fixed argument parsing in `get.sh` and `install.sh` to allow passing the tool name directly (e.g. `| bash -s -- antigravity`) without misinterpreting it as a target directory.
+- Resolved issue where installer created a nested `antigravity/dev-kit` folder instead of updating the root `./dev-kit/` directory.
+
 ## 0.4.3 – 27/10/2026
 - Added silent zero-prompt auto-updating mode via `tools/updater.py auto`.
 - Updated `/dev` workflow across all adapters (`adapters/antigravity/skills/dev/SKILL.md`, `adapters/claude/commands/dev.md`) and `RUN.md` Step 0 to automatically check and apply updates without interrupting execution.

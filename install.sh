@@ -3,8 +3,17 @@
 set -euo pipefail
 
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET_DIR="${1:-.}"
-TOOL="${2:-all}"
+
+# Support both:
+#   install.sh [target_dir] [tool]
+#   install.sh [tool]  (e.g. install.sh antigravity)
+if [[ "${1:-}" =~ ^(claude|antigravity|cursor|all)$ ]]; then
+    TOOL="$1"
+    TARGET_DIR="${2:-.}"
+else
+    TARGET_DIR="${1:-.}"
+    TOOL="${2:-all}"
+fi
 
 echo "🚀 Installing dev-kit adapters into: $TARGET_DIR"
 
