@@ -1,6 +1,6 @@
 # dev-kit
 
-Current version: **0.7.0** (see `CHANGELOG.md`). Full documentation: [docs/GUIDE.md](docs/GUIDE.md). Protocol & workflow: [RUN.md](RUN.md).
+Current version: **0.8.0** (see `CHANGELOG.md`). Full documentation: [docs/GUIDE.md](docs/GUIDE.md). Protocol & workflow: [RUN.md](RUN.md).
 
 A portable autonomous software engineering squad: a **Project Manager & Tech Lead** orchestrator, specialized developers (**Database**, **Backend**, **Frontend**), and an independent **QA Engineer** quality gate that guarantees test suites pass and acceptance criteria are met before opening Pull Requests.
 
@@ -18,7 +18,7 @@ From the root of the project you want to develop on:
 curl -fsSL https://raw.githubusercontent.com/victorfigueira/dev-kit/main/get.sh | bash
 ```
 
-This downloads the kit into `dev-kit/` and installs the commands for Claude Code, Antigravity, and Cursor. For one tool only, add its name at the end: `| bash -s -- antigravity` (or `claude`, `cursor`). To pin a version, put `DEV_KIT_REF=v0.7.0` before `bash`.
+This downloads the kit into `dev-kit/` and installs the commands for Claude Code, Antigravity, and Cursor. For one tool only, add its name at the end: `| bash -s -- antigravity` (or `claude`, `cursor`). To pin a version, put `DEV_KIT_REF=v0.8.0` before `bash`.
 
 Keep squad working plans, temporary files, and the kit copy out of git:
 
@@ -113,7 +113,7 @@ flowchart TD
 | **Database Engineer (DBA)** | `agents/database.md` | Schema modeling, migration scripts (`up`/`down`), index optimization, and local test database verification. | Operates strictly in local/Docker environments. Enforces Expand & Contract, safe backfills, and PII encryption. |
 | **Backend Developer** | `agents/backend.md` | REST/GraphQL endpoints, domain services, strict input validation schemas (Zod/Pydantic), and unit tests. | Never leaks raw database errors. Enforces AuthN/AuthZ, IDOR protection, and deterministic offline mocking. |
 | **Frontend Developer** | `agents/frontend.md` | Reusable UI components, client state, styling tokens, and accessibility (a11y). | Mandatory implementation of all 4 states (Loading, Error, Empty, Success), mirrored form validation, and error boundaries. |
-| **QA Engineer (Quality Gate)** | `agents/qa.md` | Independent verification: executes test suites via `test_runner.py`, verifies all ACs, and inspects `git diff`. | Zero failing tests policy. Rejects tautological tests and produces structured remediation reports. |
+| **QA Engineer (Quality Gate)** | `agents/qa.md` | Independent verification: executes test suites via `test_runner.py`, proves every AC with a `file:line` and a passing test, and inspects `git diff`. | Sees only the plan and the diff, never the developers' reports. Zero failing tests policy; rejects tautological tests and unproven criteria. |
 
 In Claude Code each role runs as its own subagent (`pm`, `database-engineer`, `backend-dev`, `frontend-dev`, `qa-verifier`) with a restricted tool list: the QA verifier cannot edit files. In Antigravity the orchestrator launches them with `invoke_subagent`. Every subagent prompt starts with `dev-kit-agent: <name>` so token usage can be attributed per role. See "Subagents" in [RUN.md](RUN.md).
 
@@ -127,7 +127,7 @@ Every task follows the protocol defined in [`RUN.md`](RUN.md):
 2. **Technical Plan (`dev/PLAN.md`):** Formulates affected layers, file lists, and sequencing, then waits for your approval (Checkpoint 1).
 3. **Feature Branch:** Creates `feat/<TICKET_KEY>-<slug>` from the latest base branch and moves Jira to *In Progress*.
 4. **Specialized Build:** Executes in dependency order (Database migrations first $\rightarrow$ Backend API contracts second $\rightarrow$ Frontend UI third).
-5. **Quality Gate:** The QA agent runs `tools/test_runner.py --typecheck --lint` and verifies every Acceptance Criterion. If any test fails, it sends logs back to the developer to resolve.
+5. **Quality Gate:** The QA agent, working only from the plan and the diff, runs `tools/test_runner.py --typecheck --lint` and proves every Acceptance Criterion with a `file:line` and a passing test. If anything fails or lacks evidence, it sends a structured report back to the developer.
 6. **Delivery & PR:** Once tests pass green, commits the planned files locally, writes `dev/PULL_REQUEST.md`, and asks before pushing and moving the Jira ticket to *In Review* (Checkpoint 2).
 
 ---

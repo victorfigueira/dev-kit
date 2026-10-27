@@ -47,10 +47,12 @@ Concise overview of what was built or resolved.
 ### Verification & Test Evidence
 - [x] All unit and integration tests passing (`python3 dev-kit/tools/test_runner.py`).
 - [x] Type check and linter clean (`0 errors, 0 warnings`).
-- [x] Acceptance Criteria verified against implementation:
-  - [x] AC-1: Verified.
-  - [x] AC-2: Verified.
-  - [x] AC-3: Verified.
+- [x] Acceptance Criteria verified by the QA verifier (copy its evidence table):
+
+| AC | Status | Implementation | Test |
+|---|---|---|---|
+| AC-1 | Verified | `path/to/file:line` | `path/to/test` › "test name" |
+| AC-2 | Verified | `path/to/file:line` | `path/to/test` › "test name" |
 
 ```
 [Paste terminal test execution output here]

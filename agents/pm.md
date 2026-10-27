@@ -50,7 +50,7 @@ Follow `dev-kit/RULES.md` and use the plan template at `dev-kit/templates/PLAN.m
   * Reference to `dev/project-context.md` for project-specific commands and conventions.
 
 ### 5. Quality Gate Loop & Circuit Breaker
-- Once all code is written, dispatch `qa-verifier` to execute tests, typechecks, linters, and AC verification.
+- Once all code is written, dispatch `qa-verifier` to execute tests, typechecks, linters, and AC verification. Give it only the inputs listed in `dev-kit/agents/qa.md` (plan, base branch, project context, its previous report), never the developers' reports or your own assessment.
 - If QA reports failures or missing criteria, dispatch the specific developer agent responsible with the structured failure report.
 - **Circuit Breaker:** Cap automated repair loops at a maximum of **3 iterations**. If tests or ACs still fail after 3 repair attempts, halt execution, document the roadblock in `dev/PLAN.md`, and request human intervention.
 

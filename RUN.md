@@ -36,7 +36,7 @@ The main session is the orchestrator: it follows this file, talks to the user at
 | `agents/qa.md` | `qa-verifier` | Step 5 | Read, Grep, Glob, Bash (no edits) |
 
 - **Prompt header.** The first line of every subagent prompt is `dev-kit-agent: <name>`, where `<name>` is the agent file without `.md` (`pm`, `database`, `backend`, `frontend`, `qa`). Token reporting uses this header to attribute usage to each role.
-- **Handoff bundle.** After the header, give the subagent: the path to `dev/PLAN.md` and its steps, the Acceptance Criteria IDs it owns, the exact files it may touch, and `dev/project-context.md`. For a QA rerun or a fix, add the previous `CHANGES REQUESTED` report.
+- **Handoff bundle.** After the header, give each developer: the path to `dev/PLAN.md` and its steps, the Acceptance Criteria IDs it owns, the exact files it may touch, and `dev/project-context.md`; for a fix, add the `CHANGES REQUESTED` report. The QA verifier gets a narrower bundle (Step 5).
 - **Claude Code:** launch the subagents installed in `.claude/agents/`. Their tool lists are enforced by Claude Code.
 - **Antigravity:** `invoke_subagent(TypeName='self', Role='<Role>', Prompt='dev-kit-agent: <name>\n...', Workspace='inherit')`.
 - **Tools without subagents:** play each role in turn, rereading its file in `dev-kit/agents/` and `dev-kit/RULES.md` at the start of each role, and keep the QA review independent of what you concluded while building.
@@ -168,13 +168,11 @@ Dispatch the required specialists as subagents (see "Subagents" above), one at a
    - Ensures accessibility (a11y) and responsive design.
 
 ### Step 5: Quality Gate & Verification (`dev-kit/agents/qa.md`)
-Dispatch the `qa-verifier` subagent (header `dev-kit-agent: qa`). It runs the independent quality gate:
-```bash
-python3 dev-kit/tools/test_runner.py --typecheck --lint
-```
-1. **Zero Failing Tests:** If tests fail, the QA verifier reports failure output back to the PM. The PM re-engages the responsible developer agent to fix the failure.
-2. **Acceptance Criteria Verification:** Every AC listed in `dev/PLAN.md` must be validated against actual code.
-3. **Diff Hygiene:** Check `git diff` to ensure no temporary files, debug statements, or secrets are tracked.
+Dispatch the `qa-verifier` subagent (header `dev-kit-agent: qa`). Give it only what `agents/qa.md` lists under "What you receive": the path to `dev/PLAN.md`, the base branch, `dev/project-context.md` and, on a rerun, its own previous report. Never pass the developers' reports or your own assessment of the change.
+
+The verifier runs `python3 dev-kit/tools/test_runner.py --typecheck --lint`, proves every Acceptance Criterion with an implementation `file:line` and a passing test, checks test quality, scope and diff hygiene, and returns a verdict with one evidence line per criterion.
+1. **APPROVED:** continue with Step 6 and keep the verdict for `dev/PULL_REQUEST.md`.
+2. **CHANGES REQUESTED:** send each failure to the developer responsible, then dispatch the verifier again. After 3 failed rounds, stop (circuit breaker in `RULES.md`), record the roadblock in `dev/PLAN.md` and ask the user.
 
 ### Step 6: Commit & Delivery
 Once QA approves:
@@ -218,7 +216,7 @@ Delivery Scorecard:
   • Frontend: [<n> components · 4 states verified]
   • Quality Gate: APPROVED (<n> tests green · typecheck clean · lint clean)
 Cost: $<x.xx> USD (<tokens> tokens · <model>)
-Acceptance Criteria: All <n> criteria verified
+Acceptance Criteria: <n>/<n> verified with evidence
 Pull Request summary: dev/PULL_REQUEST.md
 Jira: [TICKET_KEY] <transitioned to In Review | not changed>
 ```

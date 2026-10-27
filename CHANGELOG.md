@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.0 – 28/10/2026
+- Made the QA verifier independent in the style of audit-kit's skeptic verifier (DK-5): `agents/qa.md` now lists what it receives (plan, base branch, project context, its own previous report) and what it must ignore (developer reports, the orchestrator's assessment, status marks in `dev/PLAN.md`).
+- Added a burden-of-proof section: each Acceptance Criterion is Verified only with an implementation `file:line` and a passing test that asserts it, or Verified (static) with a reason; claims, ticked boxes and "the suite passes" do not count.
+- New verdict format with a checks table and an evidence row per criterion; APPROVED also requires no files outside the plan's inventory. `RUN.md` Step 5, `RULES.md` Section 6, the PR template, `/dev-qa` adapters and the `qa-verifier` subagent follow it.
+
 ## 0.7.0 – 28/10/2026
 - Added Claude Code subagents (DK-4): `pm`, `database-engineer`, `backend-dev`, `frontend-dev` and `qa-verifier` in `adapters/claude/agents/`, each pointing to its file in `agents/`, with restricted tool lists; `qa-verifier` cannot edit files.
 - `install.sh` installs them into `.claude/agents/` and skips any existing file with the same name that is not a dev-kit adapter.

@@ -80,7 +80,7 @@ flowchart TD
 2. **Plan:** The PM agent writes `dev/PLAN.md` documenting affected files, Squad Delivery Matrix, assumptions, and execution order, and waits for your approval.
 3. **Branch:** Creates an isolated git branch (`feat/<TICKET>-<slug>`) and moves the ticket to *In Progress*.
 4. **Build:** Dispatches specialists in order (Database $\rightarrow$ Backend $\rightarrow$ Frontend).
-5. **Verify:** The QA agent runs `tools/test_runner.py` and inspects `git diff`.
+5. **Verify:** The QA agent, which sees only the plan and the diff, runs `tools/test_runner.py`, proves each Acceptance Criterion with a `file:line` and a passing test, and inspects `git diff`.
 6. **Deliver:** Commits only the planned files, writes `dev/PULL_REQUEST.md` (with Squad Delivery & Quality Gate Scorecard), then asks before pushing and updating Jira.
 
 Arguments: `continuous` carries on with the next backlog ticket after each delivery (checkpoints included) and `unattended` skips both checkpoints. Neither is ever assumed.
@@ -188,7 +188,9 @@ The main session orchestrates and each role runs as a subagent in its own contex
 ### QA Engineer & Quality Gate (`qa`)
 * **File:** `dev-kit/agents/qa.md`
 * **Role:** Independent quality verification, test authenticity audits, and diff inspection.
-* **Safety Rule:** The Quality Gate is non-negotiable. Rejects failing suites, tautological/dummy tests, or unverified acceptance criteria using structured `CHANGES REQUESTED` remediation reports.
+* **Independence:** Receives only `dev/PLAN.md`, the base branch, the project context and its own previous report. Developer reports, the orchestrator's opinion and status marks in the plan are ignored.
+* **Burden of proof:** Each Acceptance Criterion is Verified only with an implementation `file:line` and a passing test that asserts it (or Verified (static) with a reason when no test can apply). "The suite passes", "it is handled elsewhere" without a location, or a ticked checkbox do not count.
+* **Safety Rule:** The Quality Gate is non-negotiable. Rejects failing suites, tautological/dummy tests, or unproven acceptance criteria using structured `CHANGES REQUESTED` remediation reports, with an evidence table per criterion.
 
 ---
 

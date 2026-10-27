@@ -13,6 +13,6 @@ When asked to run `/dev`, implement a feature, resolve a Jira ticket, or fix a b
 2. **Database Changes:** Follow `dev-kit/agents/database.md`. Always write migrations with both `up` and `down`, add indexes on foreign keys, and test against local database.
 3. **Backend Changes:** Follow `dev-kit/agents/backend.md`. Enforce strict input validation (Zod/Pydantic), AuthN/AuthZ guards, and write unit tests.
 4. **Frontend Changes:** Follow `dev-kit/agents/frontend.md`. Implement all 4 async states (Loading, Error, Empty, Success), mirrored form validation, and accessibility.
-5. **Quality Gate:** Run `python3 dev-kit/tools/test_runner.py --typecheck --lint` and verify all tests pass with zero regressions.
+5. **Quality Gate:** Follow `dev-kit/agents/qa.md` in a fresh pass: set aside what you concluded while building, run `python3 dev-kit/tools/test_runner.py --typecheck --lint`, and prove every Acceptance Criterion with a `file:line` and a passing test.
 6. **Delivery:** Stage only the planned files by explicit path (never `git add .`), commit locally, then ask before pushing, commenting on Jira or transitioning the ticket (Checkpoint 2).
 7. **Next ticket:** Only with `continuous`, return to the base branch and propose the next backlog ticket, checkpoints included. `unattended` (only if the user typed it) skips both checkpoints.

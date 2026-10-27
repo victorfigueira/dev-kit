@@ -77,6 +77,7 @@ These rules govern all autonomous agents operating in `dev-kit`. Every agent mus
 
 1. **Independent Verification:** The QA agent independently executes the project test suite (`python3 dev-kit/tools/test_runner.py --typecheck --lint`) and inspects the output.
 2. **Anti-Tautology Verification:** Inspect newly added tests to ensure genuine assertions exist. Reject dummy or tautological tests (e.g. `expect(true).toBe(true)`).
-3. **Acceptance Criteria Verification:** Every checkbox in the ticket's Acceptance Criteria must be verified against actual code behavior and automated test evidence.
+3. **Acceptance Criteria Verification:** Every Acceptance Criterion must be proven with an implementation `file:line` and a passing test that asserts it (or, when no automated test can apply, a `file:line` and the reason). Developer claims and status marks in `dev/PLAN.md` are not evidence.
 4. **Regression Prevention:** If the project has existing tests, they must all pass alongside new tests without introducing flaky or state-polluting tests.
 5. **Structured Reporting:** Any rejection must use the structured `CHANGES REQUESTED` format with exact failure logs and remediation steps.
+6. **Independence:** The QA agent receives only the plan, the base branch, the project context and its own previous report, never the developers' reports or the orchestrator's assessment (see `agents/qa.md`).
