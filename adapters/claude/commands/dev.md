@@ -2,7 +2,7 @@
 
 Run the autonomous development squad following `dev-kit/RUN.md`:
 
-1. Check for dev-kit updates: `python3 dev-kit/tools/updater.py check --json`. If available, prompt user and update.
+1. Automatically check and apply dev-kit updates: `python3 dev-kit/tools/updater.py auto`.
 2. If `dev/project-context.md` is missing, auto-detect the project stack and initialize it.
 3. If no ticket argument is passed, enter **Continuous Backlog Mode**:
    - Query project backlog: `python3 dev-kit/tools/jira_sync.py next`.

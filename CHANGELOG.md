@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.3 – 27/10/2026
+- Added silent zero-prompt auto-updating mode via `tools/updater.py auto`.
+- Updated `/dev` workflow across all adapters (`adapters/antigravity/skills/dev/SKILL.md`, `adapters/claude/commands/dev.md`) and `RUN.md` Step 0 to automatically check and apply updates without interrupting execution.
+- Added comprehensive unit tests for `auto` update command in `tools/updater_test.py`.
+
 ## 0.4.2 – 27/10/2026
 - Added persistent cumulative cost ledger (`dev/COSTS.md` and `dev/cost_ledger.json`) via `tools/cost_tracker.py log`.
 - Enforced automated Jira comment posting upon ticket completion with exact token consumption, USD development cost, branch link, and QA status.

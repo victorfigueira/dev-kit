@@ -198,6 +198,11 @@ def main():
     update_p.add_argument("--tool", default="all", help="Target tool (claude, antigravity, cursor, all)")
     update_p.add_argument("--target-dir", default=None, help="Root directory of consumer project")
 
+    # Auto
+    auto_p = subparsers.add_parser("auto", help="Automatically check and apply update if available without prompts")
+    auto_p.add_argument("--tool", default="all", help="Target tool (claude, antigravity, cursor, all)")
+    auto_p.add_argument("--target-dir", default=None, help="Root directory of consumer project")
+
     args = parser.parse_args()
 
     if args.command == "check":
@@ -216,6 +221,14 @@ def main():
     elif args.command == "update":
         success = perform_update(target_dir=args.target_dir, tool=args.tool)
         return 0 if success else 1
+
+    elif args.command == "auto":
+        status = check_for_updates()
+        if status.get("update_available"):
+            print(f"⚡ dev-kit auto-update found: v{status['current_version']} ➔ v{status['latest_version']}. Applying update...")
+            success = perform_update(target_dir=args.target_dir, tool=args.tool)
+            return 0 if success else 1
+        return 0
 
     return 0
 
