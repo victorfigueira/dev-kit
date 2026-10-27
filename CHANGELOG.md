@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.5 – 27/10/2026
+- Added automatic Jira credential discovery in `tools/jira_sync.py`: seamlessly detects Jira credentials from `.env`, `.env.local`, `dev/.env`, environment variables (`JIRA_BASE_URL`, `JIRA_USER_EMAIL`/`JIRA_EMAIL`, `JIRA_API_TOKEN`), and MCP configurations (`~/.gemini/antigravity/mcp_config.json`, `~/.cursor/mcp.json`, `~/.claude/mcp.json`) with zero manual setup.
+- Added macOS SSL certificate fallback (`safe_urlopen`) to prevent `CERTIFICATE_VERIFY_FAILED` errors during Jira Cloud REST API calls on macOS Python installations.
+- Enhanced Jira comment formatting into native Atlassian Document Format (ADF) multiline paragraphs.
+
 ## 0.4.4 – 27/10/2026
 - Fixed argument parsing in `get.sh` and `install.sh` to allow passing the tool name directly (e.g. `| bash -s -- antigravity`) without misinterpreting it as a target directory.
 - Resolved issue where installer created a nested `antigravity/dev-kit` folder instead of updating the root `./dev-kit/` directory.

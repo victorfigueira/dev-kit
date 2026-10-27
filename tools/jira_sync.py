@@ -18,10 +18,22 @@ import base64
 import json
 import os
 import re
+import ssl
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+
+
+def safe_urlopen(req, timeout=15):
+    """Execute urllib request with fallback for environments with SSL certificate verification issues."""
+    try:
+        return urllib.request.urlopen(req, timeout=timeout)
+    except urllib.error.URLError as e:
+        if "CERTIFICATE_VERIFY_FAILED" in str(e) or "certificate verify failed" in str(e).lower():
+            ctx = ssl._create_unverified_context()
+            return urllib.request.urlopen(req, timeout=timeout, context=ctx)
+        raise
 
 
 def extract_acceptance_criteria(description):
@@ -65,10 +77,67 @@ def parse_description(desc_raw):
     return ""
 
 
-def get_auth_header():
+def load_env_credentials():
+    """Resolve JIRA credentials from environment, .env files, or MCP configs."""
     base_url = os.environ.get("JIRA_BASE_URL")
-    email = os.environ.get("JIRA_USER_EMAIL")
+    email = os.environ.get("JIRA_USER_EMAIL") or os.environ.get("JIRA_EMAIL")
     token = os.environ.get("JIRA_API_TOKEN")
+
+    if base_url and email and token:
+        return base_url, email, token
+
+    # 1. Check local .env files
+    env_paths = [".env", ".env.local", "dev/.env", os.path.expanduser("~/.jira.env")]
+    for env_path in env_paths:
+        if base_url and email and token:
+            break
+        if os.path.exists(env_path):
+            try:
+                with open(env_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line or line.startswith("#") or "=" not in line:
+                            continue
+                        k, v = line.split("=", 1)
+                        k, v = k.strip(), v.strip().strip("\"'")
+                        if k == "JIRA_BASE_URL" and not base_url:
+                            base_url = v
+                        elif k in ("JIRA_USER_EMAIL", "JIRA_EMAIL") and not email:
+                            email = v
+                        elif k == "JIRA_API_TOKEN" and not token:
+                            token = v
+            except Exception:
+                pass
+
+    # 2. Check MCP configurations (Antigravity, Cursor, Claude)
+    mcp_paths = [
+        os.path.expanduser("~/.gemini/antigravity/mcp_config.json"),
+        os.path.expanduser("~/.cursor/mcp.json"),
+        os.path.expanduser("~/.claude/mcp.json"),
+    ]
+    for mcp_path in mcp_paths:
+        if base_url and email and token:
+            break
+        if os.path.exists(mcp_path):
+            try:
+                with open(mcp_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    jira_cfg = data.get("mcpServers", {}).get("jira", {})
+                    jira_env = jira_cfg.get("env", {})
+                    if not base_url and jira_env.get("JIRA_BASE_URL"):
+                        base_url = jira_env.get("JIRA_BASE_URL")
+                    if not email and (jira_env.get("JIRA_EMAIL") or jira_env.get("JIRA_USER_EMAIL")):
+                        email = jira_env.get("JIRA_EMAIL") or jira_env.get("JIRA_USER_EMAIL")
+                    if not token and jira_env.get("JIRA_API_TOKEN"):
+                        token = jira_env.get("JIRA_API_TOKEN")
+            except Exception:
+                pass
+
+    return base_url, email, token
+
+
+def get_auth_header():
+    base_url, email, token = load_env_credentials()
 
     if not base_url or not email or not token:
         return None, None
@@ -127,7 +196,7 @@ def fetch_ticket(ticket_key):
     url = f"{base_url}/rest/api/3/issue/{ticket_key}?fields=summary,description,issuetype,status,priority"
     req = urllib.request.Request(url, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with safe_urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             fields = data.get("fields", {})
             desc_text = parse_description(fields.get("description"))
@@ -218,7 +287,7 @@ def fetch_backlog(project_key=None, limit=10):
     req = urllib.request.Request(url, headers=headers)
 
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with safe_urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             issues = data.get("issues", [])
             results = []
@@ -261,7 +330,7 @@ def transition_ticket(ticket_key, target_status):
     trans_url = f"{base_url}/rest/api/3/issue/{ticket_key}/transitions"
     req = urllib.request.Request(trans_url, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with safe_urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             transitions = data.get("transitions", [])
             matched_id = None
@@ -278,7 +347,7 @@ def transition_ticket(ticket_key, target_status):
             # 2. Perform transition
             post_data = json.dumps({"transition": {"id": matched_id}}).encode("utf-8")
             post_req = urllib.request.Request(trans_url, data=post_data, headers=headers, method="POST")
-            with urllib.request.urlopen(post_req, timeout=15):
+            with safe_urlopen(post_req, timeout=15):
                 print(f"✅ Successfully transitioned {ticket_key} to '{target_status}'.")
                 return True
     except Exception as e:
@@ -290,27 +359,37 @@ def comment_ticket(ticket_key, comment_text):
     """Add a structured markdown comment to a Jira ticket."""
     base_url, headers = get_auth_header()
     if not base_url:
-        print(f"Offline mode: simulated comment on {ticket_key}: {comment_text}")
+        print(f"⚠️ Jira credentials not configured (checked env vars, .env, and MCP config). Simulated comment on {ticket_key}: {comment_text}")
         return True
 
     url = f"{base_url}/rest/api/3/issue/{ticket_key}/comment"
+    paragraphs = []
+    for line in comment_text.splitlines():
+        if not line.strip():
+            continue
+        paragraphs.append({
+            "type": "paragraph",
+            "content": [{"type": "text", "text": line}]
+        })
+    if not paragraphs:
+        paragraphs = [{"type": "paragraph", "content": [{"type": "text", "text": comment_text}]}]
+
     body_data = {
         "body": {
             "type": "doc",
             "version": 1,
-            "content": [
-                {
-                    "type": "paragraph",
-                    "content": [{"type": "text", "text": comment_text}]
-                }
-            ]
+            "content": paragraphs
         }
     }
     req = urllib.request.Request(url, data=json.dumps(body_data).encode("utf-8"), headers=headers, method="POST")
     try:
-        with urllib.request.urlopen(req, timeout=15):
-            print(f"✅ Comment added to {ticket_key}.")
+        with safe_urlopen(req, timeout=15):
+            print(f"✅ Comment added to Jira ticket {ticket_key}.")
             return True
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode("utf-8", errors="replace") if hasattr(e, "read") else str(e)
+        print(f"Error posting comment to Jira ({e.code}): {error_body}", file=sys.stderr)
+        return False
     except Exception as e:
         print(f"Error posting comment to Jira: {e}", file=sys.stderr)
         return False

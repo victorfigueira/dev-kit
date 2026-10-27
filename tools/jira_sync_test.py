@@ -55,6 +55,15 @@ AC-2: Returns 400 Bad Request on invalid comment ID
     def test_detect_project_key_provided(self):
         self.assertEqual(detect_project_key("abc"), "ABC")
 
+    def test_load_env_credentials_from_mcp_or_env(self):
+        from tools.jira_sync import load_env_credentials
+        from unittest.mock import patch
+        with patch.dict("os.environ", {"JIRA_BASE_URL": "https://test.atlassian.net", "JIRA_EMAIL": "test@test.com", "JIRA_API_TOKEN": "token123"}):
+            url, email, token = load_env_credentials()
+            self.assertEqual(url, "https://test.atlassian.net")
+            self.assertEqual(email, "test@test.com")
+            self.assertEqual(token, "token123")
+
 
 if __name__ == "__main__":
     unittest.main()
