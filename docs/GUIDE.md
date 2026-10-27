@@ -158,6 +158,10 @@ python3 dev-kit/tools/updater.py update
 python3 dev-kit/tools/cost_tracker.py start --ticket <TICKET_KEY>
 python3 dev-kit/tools/cost_tracker.py report [--since ISO] [--model MODEL] [--json]
 
+# Write the run record to dev/runs.json (and regenerate dev/COSTS.md), then record the delivery
+python3 dev-kit/tools/cost_tracker.py log --ticket <TICKET_KEY> --summary "<TITLE>" --qa-rounds <n> --ac <verified>/<total> --no-jira
+python3 dev-kit/tools/cost_tracker.py deliver --ticket <TICKET_KEY> [--pushed] [--jira-status "In Review"]
+
 # Raw token counts from the Claude Code or Antigravity session files
 python3 dev-kit/tools/usage_report.py --since 2026-10-27T10:00:00Z
 ```

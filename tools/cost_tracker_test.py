@@ -65,26 +65,78 @@ class TestCostTracker(unittest.TestCase):
         self.assertTrue(report["estimated"])
         self.assertIn("Estimated", cost_tracker.format_markdown(report))
 
-    def test_log_marks_estimate_in_ledger_and_costs_md(self):
+    def test_log_marks_estimate_in_runs_and_costs_md(self):
         with patch("tools.cost_tracker.usage_report.collect", return_value={"available": False}), \
                 patch("tools.cost_tracker.usage_report.detect_model", return_value=None):
-            entry = cost_tracker.log_ticket_completion("TEST-1", "Estimated ticket", post_jira=False)
-        self.assertTrue(entry["estimated"])
-        self.assertTrue(entry["cost_usd"] > 0)
+            run = cost_tracker.log_ticket_completion("TEST-1", "Estimated ticket", branch="feat/TEST-1", post_jira=False)
+        self.assertTrue(run["estimated"])
+        self.assertTrue(run["cost_usd"] > 0)
         with open(cost_tracker.get_costs_md_path()) as f:
             self.assertIn("| estimated |", f.read())
 
-    def test_log_measured_entry_and_resets_session(self):
+    def test_run_record_has_the_documented_fields(self):
         cost_tracker.start_ticket("TEST-2")
-        with patch("tools.cost_tracker.usage_report.collect", return_value=MEASURED):
-            entry = cost_tracker.log_ticket_completion("TEST-2", "Measured ticket", post_jira=False)
-        self.assertFalse(entry["estimated"])
-        self.assertEqual(entry["roles"]["orchestrator"]["tokens"], 150)
-        with open(cost_tracker.get_ledger_file_path()) as f:
-            self.assertEqual(json.load(f)[0]["ticket"], "TEST-2")
-        with open(cost_tracker.get_costs_md_path()) as f:
-            self.assertIn("| measured |", f.read())
+        with patch("tools.cost_tracker.usage_report.collect", return_value=MEASURED), \
+                patch.dict(os.environ, {"CLAUDECODE": "1"}):
+            run = cost_tracker.log_ticket_completion("TEST-2", "Measured ticket", branch="feat/TEST-2", post_jira=False,
+                                                     base_branch="develop", qa_rounds=2, ac="3/3")
+        with open(cost_tracker.get_runs_file_path()) as f:
+            data = json.load(f)
+        self.assertEqual(data["schema_version"], 1)
+        saved = data["runs"][0]
+        for key in ("ticket", "summary", "branch", "base_branch", "commit", "kit_version", "tool", "model",
+                    "started_at", "finished_at", "qa", "estimated", "cost_usd", "usage", "delivery"):
+            self.assertIn(key, saved)
+        self.assertEqual(saved["tool"], "Claude Code")
+        self.assertEqual(saved["base_branch"], "develop")
+        self.assertEqual(saved["qa"], {"verdict": "APPROVED", "rounds": 2,
+                                       "acceptance_criteria": {"verified": 3, "total": 3}})
+        self.assertEqual(saved["started_at"], "2026-10-27T10:00:00Z")
+        self.assertEqual(saved["usage"]["agents"][0]["agent"], "orchestrator")
+        with open(os.path.join(cost_tracker.KIT_DIR, "VERSION")) as f:
+            self.assertEqual(saved["kit_version"], f.read().strip())
+        self.assertFalse(run["estimated"])
         self.assertFalse(os.path.exists(cost_tracker.get_session_file_path()))
+
+    def test_costs_md_is_generated_from_runs(self):
+        with patch("tools.cost_tracker.usage_report.collect", return_value=MEASURED):
+            cost_tracker.start_ticket("A-1")
+            cost_tracker.log_ticket_completion("A-1", "First", branch="feat/A-1", post_jira=False, qa_rounds=1)
+            cost_tracker.start_ticket("A-1")
+            cost_tracker.log_ticket_completion("A-1", "First again", branch="feat/A-1", post_jira=False, qa_rounds=3)
+        with open(cost_tracker.get_runs_file_path()) as f:
+            runs = json.load(f)["runs"]
+        self.assertEqual(len(runs), 1)  # same ticket and branch replaces the record
+        os.remove(cost_tracker.get_costs_md_path())
+        cost_tracker.render_costs_markdown(runs)
+        with open(cost_tracker.get_costs_md_path()) as f:
+            md = f.read()
+        self.assertIn("First again", md)
+        self.assertIn("| 3 |", md)
+        self.assertIn("| measured |", md)
+
+    def test_deliver_updates_latest_run(self):
+        with patch("tools.cost_tracker.usage_report.collect", return_value=MEASURED):
+            cost_tracker.start_ticket("B-1")
+            cost_tracker.log_ticket_completion("B-1", branch="feat/B-1", post_jira=False)
+        run = cost_tracker.record_delivery("B-1", pushed=True, jira_status="In Review")
+        self.assertEqual(run["delivery"], {"pushed": True, "jira_status": "In Review"})
+        self.assertIsNone(cost_tracker.record_delivery("NOPE-1", pushed=True))
+
+    def test_legacy_ledger_is_imported_once(self):
+        os.makedirs("dev")
+        with open(cost_tracker.get_legacy_ledger_path(), "w") as f:
+            json.dump([{"date": "2026-01-01 10:00", "ticket": "OLD-1", "summary": "Old", "branch": "feat/OLD-1",
+                        "model": "Claude 3.7 Sonnet", "input_tokens": 10, "output_tokens": 5, "total_tokens": 15,
+                        "cost_usd": 0.5}], f)
+        with patch("tools.cost_tracker.usage_report.collect", return_value=MEASURED):
+            cost_tracker.start_ticket("NEW-1")
+            cost_tracker.log_ticket_completion("NEW-1", branch="feat/NEW-1", post_jira=False)
+        with open(cost_tracker.get_runs_file_path()) as f:
+            runs = json.load(f)["runs"]
+        self.assertEqual([r["ticket"] for r in runs], ["OLD-1", "NEW-1"])
+        self.assertTrue(runs[0]["estimated"])
+        self.assertEqual(runs[0]["usage"]["totals"]["total_tokens"], 15)
 
     def test_jira_comment_says_estimated(self):
         with patch("tools.cost_tracker.usage_report.collect", return_value={"available": False}), \

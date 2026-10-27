@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.0 – 28/10/2026
+- Added a structured run record (DK-8): `cost_tracker.py log` now writes one record per delivered ticket to `dev/runs.json` with ticket, branch, base branch, commit, kit version, tool, model, start and finish times, QA rounds, Acceptance Criteria verified, per-role token usage, cost and whether it was estimated. The schema is documented in `RUN.md` under "The run record", like audit-kit's `findings.json`.
+- `dev/COSTS.md` is generated from `dev/runs.json` (new Tool, QA Rounds and Commit columns) and replaces `dev/cost_ledger.json`, which is imported once on the first write. New `cost_tracker.py deliver` records what Checkpoint 2 approved (push, Jira status).
+- RUN.md Step 6 passes `--qa-rounds` and `--ac` to `log` and calls `deliver` after the push and Jira update. No reference to `dev/PR_<TICKET_KEY>.md`, which nothing generated, remains (the Jira comment stopped citing it in 0.9.0).
+
 ## 0.9.0 – 28/10/2026
 - The ticket cost is now measured, not guessed (DK-7): new `tools/usage_report.py`, ported from audit-kit, sums input, output and cache tokens from the Claude Code or Antigravity session files since the ticket start and attributes them per role from the `dev-kit-agent` header (orchestrator, pm, database, backend, frontend, qa), pricing each model at its own rate.
 - `cost_tracker.py start --ticket <KEY>` records the start time in `dev/session.json` (RUN.md Step 1); `report` and `log` use it. Without session files the tool falls back to the diff estimate and marks it `estimated: true` in the report, the PR, `dev/COSTS.md` (new Source column) and the Jira comment. The unused `record` command is gone.

@@ -1,6 +1,6 @@
 # dev-kit
 
-Current version: **0.9.0** (see `CHANGELOG.md`). Full documentation: [docs/GUIDE.md](docs/GUIDE.md). Protocol & workflow: [RUN.md](RUN.md).
+Current version: **0.10.0** (see `CHANGELOG.md`). Full documentation: [docs/GUIDE.md](docs/GUIDE.md). Protocol & workflow: [RUN.md](RUN.md).
 
 A portable autonomous software engineering squad: a **Project Manager & Tech Lead** orchestrator, specialized developers (**Database**, **Backend**, **Frontend**), and an independent **QA Engineer** quality gate that guarantees test suites pass and acceptance criteria are met before opening Pull Requests.
 
@@ -18,7 +18,7 @@ From the root of the project you want to develop on:
 curl -fsSL https://raw.githubusercontent.com/victorfigueira/dev-kit/main/get.sh | bash
 ```
 
-This downloads the kit into `dev-kit/` and installs the commands for Claude Code, Antigravity, and Cursor. For one tool only, add its name at the end: `| bash -s -- antigravity` (or `claude`, `cursor`). To pin a version, put `DEV_KIT_REF=v0.9.0` before `bash`.
+This downloads the kit into `dev-kit/` and installs the commands for Claude Code, Antigravity, and Cursor. For one tool only, add its name at the end: `| bash -s -- antigravity` (or `claude`, `cursor`). To pin a version, put `DEV_KIT_REF=v0.10.0` before `bash`.
 
 Keep squad working plans, temporary files, and the kit copy out of git:
 
@@ -157,7 +157,7 @@ Database changes are the most critical operations in software engineering. `dev-
 | `templates/` | Templates for `PLAN.md`, `PULL_REQUEST.md`, and `project-context.md`. |
 | `tools/test_runner.py` | Universal test suite runner auto-detecting Node, Python, Go, Rust, and .NET. |
 | `tools/jira_sync.py` | Jira Cloud synchronization (fetches ACs, transitions status, posts comments). |
-| `tools/cost_tracker.py` | Ticket cost ledger (`dev/COSTS.md`): measured per role from session files, or marked estimated. |
+| `tools/cost_tracker.py` | Run record per ticket in `dev/runs.json` (tool, model, commit, kit version, QA rounds, tokens, cost) and `dev/COSTS.md` generated from it. |
 | `tools/usage_report.py` | Sums tokens from Claude Code or Antigravity session files since the ticket start, per `dev-kit-agent` role. |
 | `tools/pricing.json` | Model prices per 1M tokens (dated); override per project with `dev/pricing.json`. |
 | `adapters/` | Thin wrappers for Antigravity, Claude Code, and Cursor. |

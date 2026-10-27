@@ -59,7 +59,7 @@ Follow `dev-kit/RUN.md` Step 6:
 - Inspect final `git diff` for hygiene and cleanliness.
 - Stage only the files in the Affected Files Inventory of `dev/PLAN.md` (and their tests), by explicit path. Never `git add .`, `git add -A` or `git commit -a`.
 - Create a local atomic conventional commit: `git commit -m "feat(<scope>): <concise description>"`.
-- Log the cost locally with `cost_tracker.py log ... --no-jira` (measured from session files since `cost_tracker.py start`) and write `dev/PULL_REQUEST.md` with the Squad Delivery Scorecard and the `cost_tracker.py report` output; mark the cost "(estimated)" when the tool says it is.
+- Write the run record with `cost_tracker.py log ... --qa-rounds <n> --ac <verified>/<total> --no-jira` (cost measured from session files since `cost_tracker.py start`; record in `dev/runs.json`, see RUN.md) and write `dev/PULL_REQUEST.md` with the Squad Delivery Scorecard and the `cost_tracker.py report` output; mark the cost "(estimated)" when the tool says it is.
 - **Checkpoint 2 (delivery approval):** Ask before pushing the branch, commenting on Jira or transitioning the ticket, and do only what the user approved. Skipped only with `unattended`.
 - Report a concise completion summary in chat.
 

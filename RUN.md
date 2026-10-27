@@ -189,10 +189,10 @@ Once QA approves:
    ```bash
    git commit -m "feat(<scope>): <concise description of changes>"
    ```
-3. Log the development cost locally (no Jira comment yet). It is measured from the Claude Code or Antigravity session files since the Step 1 start time and split per role by the `dev-kit-agent` header (`tools/usage_report.py`):
+3. Write the run record (no Jira comment yet). The cost is measured from the Claude Code or Antigravity session files since the Step 1 start time and split per role by the `dev-kit-agent` header (`tools/usage_report.py`). `log` adds the record to `dev/runs.json` (see "The run record" below) and regenerates `dev/COSTS.md` from it:
    ```bash
    python3 dev-kit/tools/cost_tracker.py report
-   python3 dev-kit/tools/cost_tracker.py log --ticket <TICKET_KEY> --summary "<TITLE>" --branch "feat/<TICKET_KEY>-<slug>" --no-jira
+   python3 dev-kit/tools/cost_tracker.py log --ticket <TICKET_KEY> --summary "<TITLE>" --branch "feat/<TICKET_KEY>-<slug>" --base-branch <BASE_BRANCH> --qa-rounds <n> --ac <verified>/<total> --no-jira
    ```
    Write `dev/PULL_REQUEST.md` from `dev-kit/templates/PULL_REQUEST.md`, pasting the `report` output as the cost section. If no session files were found the tool estimates from the diff and says so; then write "(estimated)" after the cost here, at Checkpoint 2, in the Jira comment and in the Step 7 summary.
 4. **Checkpoint 2: delivery approval.** Show the user, in at most 12 lines: the commit hash and message, the files committed, any changed files left unstaged, the QA verdict and the cost. Ask whether to:
@@ -208,6 +208,10 @@ Once QA approves:
    ```bash
    python3 dev-kit/tools/jira_sync.py comment <TICKET_KEY> "Quality Gate APPROVED · Branch: feat/<TICKET_KEY>-<slug> · Cost: $<cost> USD (<tokens> tokens · <model>[ · estimated])"
    python3 dev-kit/tools/jira_sync.py transition <TICKET_KEY> "In Review"
+   ```
+7. Record what was approved in the run record (omit what was not done):
+   ```bash
+   python3 dev-kit/tools/cost_tracker.py deliver --ticket <TICKET_KEY> --pushed --jira-status "In Review"
    ```
 
 ### Step 7: Chat Summary
@@ -238,3 +242,45 @@ Without `continuous`, stop after Step 7. With it:
    ```
 3. If one exists, announce it (`Next backlog ticket: <KEY> · <Summary>`) and start again from Step 1 for it, including both checkpoints (unless `unattended`).
 4. Stop when the backlog is empty, a ticket hits the QA circuit breaker, the user rejects a plan, or the user asks to pause.
+
+---
+
+## The run record (`dev/runs.json`)
+
+Every delivered ticket gets one record in `dev/runs.json`, written by `cost_tracker.py log` in Step 6 and updated by `cost_tracker.py deliver` after Checkpoint 2. It is the single source for `dev/COSTS.md`, which is regenerated on every write and must not be edited by hand. A new `log` for the same ticket and branch replaces its record. Write `unknown` (or `null` for numbers) for anything the tools cannot tell; never guess.
+
+```json
+{
+  "schema_version": 1,
+  "runs": [
+    {
+      "ticket": "PAS-101", "summary": "Add order cancellation",
+      "branch": "feat/PAS-101-cancel-order", "base_branch": "main", "commit": "abc1234",
+      "kit_version": "0.10.0", "tool": "Claude Code", "model": "claude-opus-5-5",
+      "started_at": "2026-10-27T10:00:00Z", "finished_at": "2026-10-27T11:42:10Z",
+      "qa": {"verdict": "APPROVED", "rounds": 2, "acceptance_criteria": {"verified": 3, "total": 3}},
+      "estimated": false, "cost_usd": 1.8109,
+      "usage": {
+        "source": "Claude Code session files", "since": "2026-10-27T10:00:00Z",
+        "models": ["claude-opus-5-5"], "pricing_as_of": "2026-10-27",
+        "totals": {"input_tokens": 0, "output_tokens": 0, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0, "total_tokens": 0},
+        "agents": [{"agent": "backend", "name": "Backend Developer", "runs": 1, "input_tokens": 0, "output_tokens": 0, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0, "total_tokens": 0, "cost_usd": 0.0}]
+      },
+      "delivery": {"pushed": true, "jira_status": "In Review"}
+    }
+  ]
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `commit` | Short hash of the local delivery commit from Step 6. |
+| `kit_version` | `dev-kit/VERSION` when the ticket was delivered. |
+| `tool`, `model` | Detected from the environment and the session files (`--tool`, `--model` override them). |
+| `qa.rounds` | QA verifier rounds until APPROVED (1 when it approved on the first pass). |
+| `qa.acceptance_criteria` | Criteria Verified or Verified (static) over the total in `dev/PLAN.md`. |
+| `estimated`, `usage` | Output of `tools/usage_report.py`; `estimated: true` when no session files were found and the cost comes from the diff. |
+| `delivery` | What Checkpoint 2 approved: branch pushed, and the Jira status it was moved to (`null` if unchanged). |
+
+Projects with a `dev/cost_ledger.json` from dev-kit 0.9 or earlier have it imported into `dev/runs.json` on the first write (as estimated records with `unknown` fields); the old file can then be deleted.
+
