@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.0 – 28/10/2026
+- The ticket cost is now measured, not guessed (DK-7): new `tools/usage_report.py`, ported from audit-kit, sums input, output and cache tokens from the Claude Code or Antigravity session files since the ticket start and attributes them per role from the `dev-kit-agent` header (orchestrator, pm, database, backend, frontend, qa), pricing each model at its own rate.
+- `cost_tracker.py start --ticket <KEY>` records the start time in `dev/session.json` (RUN.md Step 1); `report` and `log` use it. Without session files the tool falls back to the diff estimate and marks it `estimated: true` in the report, the PR, `dev/COSTS.md` (new Source column) and the Jira comment. The unused `record` command is gone.
+- Prices moved to `tools/pricing.json` (as of 27/10/2026: Claude Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5 and earlier; Gemini 3.x and 2.5), with 1h cache writes priced separately and per-project overrides in `dev/pricing.json`. No model is assumed by default: an unknown model is priced at a neutral mid-tier rate. The PR template no longer mentions Claude 3.7.
+
 ## 0.8.0 – 28/10/2026
 - Made the QA verifier independent in the style of audit-kit's skeptic verifier (DK-5): `agents/qa.md` now lists what it receives (plan, base branch, project context, its own previous report) and what it must ignore (developer reports, the orchestrator's assessment, status marks in `dev/PLAN.md`).
 - Added a burden-of-proof section: each Acceptance Criterion is Verified only with an implementation `file:line` and a passing test that asserts it, or Verified (static) with a reason; claims, ticked boxes and "the suite passes" do not count.

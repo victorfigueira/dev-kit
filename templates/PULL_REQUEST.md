@@ -22,18 +22,20 @@ Concise overview of what was built or resolved.
 
 ## Development Cost & Token Metrics
 
-- **AI Model:** [e.g. Claude 3.7 Sonnet / Gemini 2.5 Pro]
-- **Total Tokens:** `[Total Tokens]` (`[Input Tokens]` input · `[Output Tokens]` output)
-- **Total Development Cost:** **`$[Total Cost] USD`**
+<!-- Paste the output of `python3 dev-kit/tools/cost_tracker.py report`. Keep its "Estimated" note if it prints one. -->
 
-| Squad Role / Phase | Input Tokens | Output Tokens | Total Tokens | Cost (USD) |
-|---|---|---|---|---|
-| **Project Manager & Tech Lead** | `0` | `0` | `0` | `$0.0000` |
-| **Database Engineer (DBA)** | `0` | `0` | `0` | `$0.0000` |
-| **Backend Developer** | `0` | `0` | `0` | `$0.0000` |
-| **Frontend Developer** | `0` | `0` | `0` | `$0.0000` |
-| **QA Engineer (Quality Gate)** | `0` | `0` | `0` | `$0.0000` |
-| **Total Squad Execution** | **`0`** | **`0`** | **`0`** | **`$[Total Cost] USD`** |
+- **AI Model:** `[model id from the report, e.g. claude-opus-5-5]`
+- **Source:** `[Claude Code session files | Antigravity session transcripts | Estimate from diff and plan size]` since `[start time]`
+- **Total Tokens:** `[Total]` (`[Input]` input · `[Output]` output · `[Cache Write]` cache write · `[Cache Read]` cache read)
+- **Total Development Cost:** **`$[Total Cost] USD`** `[(estimated)]`
+
+| Squad Role | Runs | Input | Output | Cache Write | Cache Read | Cost (USD) |
+|---|---|---|---|---|---|---|
+| **Orchestrator (main session)** | `1` | `0` | `0` | `0` | `0` | `$0.0000` |
+| **Project Manager & Tech Lead** | `1` | `0` | `0` | `0` | `0` | `$0.0000` |
+| **Backend Developer** | `1` | `0` | `0` | `0` | `0` | `$0.0000` |
+| **QA Engineer (Quality Gate)** | `1` | `0` | `0` | `0` | `0` | `$0.0000` |
+| **Total** | | **`0`** | **`0`** | **`0`** | **`0`** | **`$[Total Cost] USD`** |
 
 ---
 

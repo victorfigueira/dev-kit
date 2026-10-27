@@ -154,8 +154,12 @@ python3 dev-kit/tools/updater.py check [--json]
 # Install the latest version (the agent asks you first, see UPDATE.md)
 python3 dev-kit/tools/updater.py update
 
-# Calculate and report token consumption & development cost in USD
-python3 dev-kit/tools/cost_tracker.py report [--model MODEL] [--json]
+# Record the ticket start time (RUN.md Step 1), then report tokens and USD cost per role since then
+python3 dev-kit/tools/cost_tracker.py start --ticket <TICKET_KEY>
+python3 dev-kit/tools/cost_tracker.py report [--since ISO] [--model MODEL] [--json]
+
+# Raw token counts from the Claude Code or Antigravity session files
+python3 dev-kit/tools/usage_report.py --since 2026-10-27T10:00:00Z
 ```
 
 ---

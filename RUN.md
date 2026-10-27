@@ -108,8 +108,12 @@ Skip this step only if the user wrote `no-update` with the command.
 4. If the user says no, continue with the installed version.
 
 ### Step 1: Ingest Ticket & Context
-1. If `dev/project-context.md` does not exist, automatically inspect the repository (`package.json`, test scripts, migrations) and initialize it.
-2. Ingest the task:
+1. Once the ticket key is known (after the user confirms it when none was passed), record the start time; the cost in Step 6 counts only session records from here on:
+   ```bash
+   python3 dev-kit/tools/cost_tracker.py start --ticket <TICKET_KEY>
+   ```
+2. If `dev/project-context.md` does not exist, automatically inspect the repository (`package.json`, test scripts, migrations) and initialize it.
+3. Ingest the task:
    - **Specified Ticket:** Read key from arguments (e.g. `PAS-101`) or user feature brief:
      ```bash
      python3 dev-kit/tools/jira_sync.py fetch <TICKET_KEY> --json
@@ -118,7 +122,7 @@ Skip this step only if the user wrote `no-update` with the command.
      ```bash
      python3 dev-kit/tools/jira_sync.py next
      ```
-3. Read `dev/project-context.md` to verify tech stack, base branch, package manager, and test commands.
+4. Read `dev/project-context.md` to verify tech stack, base branch, package manager, and test commands.
 
 ### Step 2: Formulate Technical Plan
 Dispatch the `pm` subagent (header `dev-kit-agent: pm`) with the ticket and its Acceptance Criteria to do items 1 to 3; the main session runs Checkpoint 1 (item 4).
@@ -185,11 +189,12 @@ Once QA approves:
    ```bash
    git commit -m "feat(<scope>): <concise description of changes>"
    ```
-3. Log the development cost locally (no Jira comment yet):
+3. Log the development cost locally (no Jira comment yet). It is measured from the Claude Code or Antigravity session files since the Step 1 start time and split per role by the `dev-kit-agent` header (`tools/usage_report.py`):
    ```bash
+   python3 dev-kit/tools/cost_tracker.py report
    python3 dev-kit/tools/cost_tracker.py log --ticket <TICKET_KEY> --summary "<TITLE>" --branch "feat/<TICKET_KEY>-<slug>" --no-jira
    ```
-   Write `dev/PULL_REQUEST.md` from `dev-kit/templates/PULL_REQUEST.md`, with the cost table and token metrics.
+   Write `dev/PULL_REQUEST.md` from `dev-kit/templates/PULL_REQUEST.md`, pasting the `report` output as the cost section. If no session files were found the tool estimates from the diff and says so; then write "(estimated)" after the cost here, at Checkpoint 2, in the Jira comment and in the Step 7 summary.
 4. **Checkpoint 2: delivery approval.** Show the user, in at most 12 lines: the commit hash and message, the files committed, any changed files left unstaged, the QA verdict and the cost. Ask whether to:
    - push `feat/<TICKET_KEY>-<slug>` to origin;
    - comment on the Jira ticket with the delivery summary;
@@ -201,7 +206,7 @@ Once QA approves:
    ```
 6. If approved and Jira is configured, comment and transition:
    ```bash
-   python3 dev-kit/tools/jira_sync.py comment <TICKET_KEY> "Quality Gate APPROVED · Branch: feat/<TICKET_KEY>-<slug> · Cost: $<cost> USD (<tokens> tokens · <model>)"
+   python3 dev-kit/tools/jira_sync.py comment <TICKET_KEY> "Quality Gate APPROVED · Branch: feat/<TICKET_KEY>-<slug> · Cost: $<cost> USD (<tokens> tokens · <model>[ · estimated])"
    python3 dev-kit/tools/jira_sync.py transition <TICKET_KEY> "In Review"
    ```
 
@@ -215,7 +220,7 @@ Delivery Scorecard:
   • Backend: [<n> endpoints · <n> unit tests]
   • Frontend: [<n> components · 4 states verified]
   • Quality Gate: APPROVED (<n> tests green · typecheck clean · lint clean)
-Cost: $<x.xx> USD (<tokens> tokens · <model>)
+Cost: $<x.xx> USD (<tokens> tokens · <model>[ · estimated])
 Acceptance Criteria: <n>/<n> verified with evidence
 Pull Request summary: dev/PULL_REQUEST.md
 Jira: [TICKET_KEY] <transitioned to In Review | not changed>
