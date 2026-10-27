@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.9 – 27/10/2026
+- Added macOS SSL certificate fallback (`safe_urlopen`) in `tools/updater.py` to prevent `[SSL: CERTIFICATE_VERIFY_FAILED]` when checking for updates against GitHub raw/API.
+- Resolved bug where updater falsely detected consumer projects as offline, blocking automatic synchronization of newer dev-kit versions.
+
 ## 0.4.8 – 27/10/2026
 - Made Jira commenting and status transition commands explicit in `adapters/antigravity/skills/dev/SKILL.md` to guarantee autonomous execution during ticket completion.
 - Ensured end-to-end execution of `cost_tracker.py log` and `jira_sync.py transition` runs inside `dev-kit`'s autonomous sprint progression loop with zero manual intervention required.

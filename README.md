@@ -1,6 +1,6 @@
 # dev-kit
 
-Current version: **0.4.8** (see `CHANGELOG.md`). Full documentation: [docs/GUIDE.md](docs/GUIDE.md). Protocol & workflow: [RUN.md](RUN.md).
+Current version: **0.4.9** (see `CHANGELOG.md`). Full documentation: [docs/GUIDE.md](docs/GUIDE.md). Protocol & workflow: [RUN.md](RUN.md).
 
 A portable autonomous software engineering squad: a **Project Manager & Tech Lead** orchestrator, specialized developers (**Database**, **Backend**, **Frontend**), and an independent **QA Engineer** quality gate that guarantees test suites pass and acceptance criteria are met before opening Pull Requests.
 
@@ -18,7 +18,7 @@ From the root of the project you want to develop on:
 curl -fsSL https://raw.githubusercontent.com/victorfigueira/dev-kit/main/get.sh | bash
 ```
 
-This downloads the kit into `dev-kit/` and installs the commands for Claude Code, Antigravity, and Cursor. For one tool only, add its name at the end: `| bash -s -- antigravity` (or `claude`, `cursor`). To pin a version, put `DEV_KIT_REF=v0.4.8` before `bash`.
+This downloads the kit into `dev-kit/` and installs the commands for Claude Code, Antigravity, and Cursor. For one tool only, add its name at the end: `| bash -s -- antigravity` (or `claude`, `cursor`). To pin a version, put `DEV_KIT_REF=v0.4.9` before `bash`.
 
 Keep squad working plans, temporary files, and the kit copy out of git:
 

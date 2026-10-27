@@ -12,12 +12,24 @@ import json
 import os
 import re
 import shutil
+import ssl
 import subprocess
 import sys
 import tarfile
 import tempfile
 import urllib.error
 import urllib.request
+
+
+def safe_urlopen(req, timeout=10):
+    """Execute urllib request with fallback for environments with SSL certificate verification issues."""
+    try:
+        return urllib.request.urlopen(req, timeout=timeout)
+    except urllib.error.URLError as e:
+        if "CERTIFICATE_VERIFY_FAILED" in str(e) or "certificate verify failed" in str(e).lower():
+            ctx = ssl._create_unverified_context()
+            return urllib.request.urlopen(req, timeout=timeout, context=ctx)
+        raise
 
 REPO_RAW_VERSION = "https://raw.githubusercontent.com/victorfigueira/dev-kit/main/VERSION"
 REPO_API_TAGS = "https://api.github.com/repos/victorfigueira/dev-kit/tags"
@@ -86,7 +98,7 @@ def fetch_remote_version(timeout=4):
         headers={"User-Agent": "dev-kit-updater"}
     )
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with safe_urlopen(req, timeout=timeout) as resp:
             content = resp.read().decode("utf-8").strip()
             if content and re.match(r"^\d+\.\d+\.\d+", content):
                 return content
@@ -99,7 +111,7 @@ def fetch_remote_version(timeout=4):
         headers={"User-Agent": "dev-kit-updater"}
     )
     try:
-        with urllib.request.urlopen(api_req, timeout=timeout) as resp:
+        with safe_urlopen(api_req, timeout=timeout) as resp:
             tags = json.loads(resp.read().decode("utf-8"))
             if tags and isinstance(tags, list):
                 top_tag = tags[0].get("name", "")
@@ -154,7 +166,7 @@ def perform_update(target_dir=None, tool="all"):
             tmp_path = tmp_tar.name
 
         req = urllib.request.Request(REPO_ARCHIVE_URL, headers={"User-Agent": "dev-kit-updater"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with safe_urlopen(req, timeout=15) as resp:
             with open(tmp_path, "wb") as f:
                 shutil.copyfileobj(resp, f)
 
