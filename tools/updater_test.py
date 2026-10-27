@@ -2,7 +2,10 @@
 """Unit tests for dev-kit updater tool."""
 import unittest
 from unittest.mock import patch
-from tools.updater import parse_semver, is_newer, read_local_version, main
+import os
+import tempfile
+from tools.updater import (parse_semver, is_newer, read_local_version, main,
+                           changelog_since, check_for_updates, perform_update)
 
 
 class TestUpdater(unittest.TestCase):
@@ -24,35 +27,52 @@ class TestUpdater(unittest.TestCase):
         self.assertNotEqual(ver, "0.0.0")
         self.assertTrue(len(ver.split(".")) >= 2)
 
-    @patch("tools.updater.perform_update")
-    @patch("tools.updater.check_for_updates")
-    def test_auto_updates_when_available(self, mock_check, mock_perform):
-        mock_check.return_value = {
-            "current_version": "0.4.0",
-            "latest_version": "0.4.1",
-            "update_available": True,
-        }
-        mock_perform.return_value = True
+    def test_changelog_since_returns_only_newer_entries(self):
+        text = (
+            "# Changelog\n\n"
+            "## 0.5.0 – 28/10/2026\n- Ask before updating.\n- Add /dev-check-update.\n\n"
+            "## 0.4.8 – 27/10/2026\n- Explicit Jira commands.\n\n"
+            "## 0.4.7 – 27/10/2026\n- Model detection.\n"
+        )
+        entries = changelog_since(text, "0.4.7")
+        self.assertEqual([e["version"] for e in entries], ["0.5.0", "0.4.8"])
+        self.assertEqual(entries[0]["date"], "28/10/2026")
+        self.assertEqual(entries[0]["notes"], ["Ask before updating.", "Add /dev-check-update."])
 
-        with patch("sys.argv", ["updater.py", "auto"]):
-            exit_code = main()
-            self.assertEqual(exit_code, 0)
-            mock_perform.assert_called_once()
+    def test_changelog_since_handles_missing_changelog(self):
+        self.assertEqual(changelog_since(None, "0.4.7"), [])
 
-    @patch("tools.updater.perform_update")
-    @patch("tools.updater.check_for_updates")
-    def test_auto_skips_when_no_update(self, mock_check, mock_perform):
-        mock_check.return_value = {
-            "current_version": "0.4.1",
-            "latest_version": "0.4.1",
-            "update_available": False,
-        }
+    @patch("tools.updater.fetch_remote_changelog", return_value="## 1.0.0 – 01/11/2026\n- Breaking.\n")
+    @patch("tools.updater.fetch_remote_version", return_value="1.0.0")
+    @patch("tools.updater.read_local_version", return_value="0.4.8")
+    def test_check_reports_major_change_and_changelog(self, _local, _remote, _changelog):
+        status = check_for_updates()
+        self.assertTrue(status["update_available"])
+        self.assertTrue(status["major_change"])
+        self.assertEqual(status["changelog"][0]["version"], "1.0.0")
 
-        with patch("sys.argv", ["updater.py", "auto"]):
-            exit_code = main()
-            self.assertEqual(exit_code, 0)
-            mock_perform.assert_not_called()
+    @patch("tools.updater.fetch_remote_version", return_value=None)
+    @patch("tools.updater.read_local_version", return_value="0.4.8")
+    def test_check_offline(self, _local, _remote):
+        status = check_for_updates()
+        self.assertTrue(status["offline"])
+        self.assertFalse(status["update_available"])
+        self.assertEqual(status["changelog"], [])
 
+    @patch("tools.updater.subprocess.run")
+    @patch("tools.updater.safe_urlopen")
+    def test_update_refuses_inside_kit_source_repo(self, mock_urlopen, mock_run):
+        with tempfile.TemporaryDirectory() as root:
+            for name in ("install.sh", "VERSION"):
+                open(os.path.join(root, name), "w").close()
+            self.assertFalse(perform_update(target_dir=root))
+        mock_urlopen.assert_not_called()
+        mock_run.assert_not_called()
+
+    def test_auto_command_is_gone(self):
+        with patch("sys.argv", ["updater.py", "auto"]), patch("sys.stderr"):
+            with self.assertRaises(SystemExit):
+                main()
 
 if __name__ == "__main__":
     unittest.main()

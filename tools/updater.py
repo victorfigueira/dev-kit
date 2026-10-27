@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Auto-update and version checking utility for dev-kit.
+"""Version checking and update utility for dev-kit.
 
-Checks GitHub for newer versions of dev-kit and updates adapter skills and tools.
+Checks GitHub for newer versions of dev-kit and, only when asked, installs them.
+The agent follows dev-kit/UPDATE.md and asks the user before running `update`.
 
 Usage:
   python3 dev-kit/tools/updater.py check [--json]
@@ -32,6 +33,7 @@ def safe_urlopen(req, timeout=10):
         raise
 
 REPO_RAW_VERSION = "https://raw.githubusercontent.com/victorfigueira/dev-kit/main/VERSION"
+REPO_RAW_CHANGELOG = "https://raw.githubusercontent.com/victorfigueira/dev-kit/main/CHANGELOG.md"
 REPO_API_TAGS = "https://api.github.com/repos/victorfigueira/dev-kit/tags"
 REPO_ARCHIVE_URL = "https://github.com/victorfigueira/dev-kit/archive/refs/heads/main.tar.gz"
 
@@ -122,8 +124,32 @@ def fetch_remote_version(timeout=4):
     return None
 
 
+def fetch_remote_changelog(timeout=4):
+    """Fetch the latest CHANGELOG.md from GitHub, or None if unreachable."""
+    req = urllib.request.Request(REPO_RAW_CHANGELOG, headers={"User-Agent": "dev-kit-updater"})
+    try:
+        with safe_urlopen(req, timeout=timeout) as resp:
+            return resp.read().decode("utf-8")
+    except Exception:
+        return None
+
+
+def changelog_since(changelog_text, local_version):
+    """Return the changelog entries newer than local_version, newest first."""
+    entries = []
+    current = None
+    for line in (changelog_text or "").splitlines():
+        header = re.match(r"^##\s+v?(\d+\.\d+\.\d+)\s*(?:[–-]\s*(.+))?$", line.strip())
+        if header:
+            current = {"version": header.group(1), "date": (header.group(2) or "").strip(), "notes": []}
+            entries.append(current)
+        elif current and line.strip().startswith("- "):
+            current["notes"].append(line.strip()[2:])
+    return [e for e in entries if is_newer(e["version"], local_version)]
+
+
 def check_for_updates():
-    """Check if an update is available."""
+    """Check if an update is available, with the changelog entries it would bring."""
     local_ver = read_local_version()
     remote_ver = fetch_remote_version()
 
@@ -132,6 +158,8 @@ def check_for_updates():
             "current_version": local_ver,
             "latest_version": local_ver,
             "update_available": False,
+            "major_change": False,
+            "changelog": [],
             "offline": True
         }
 
@@ -140,8 +168,17 @@ def check_for_updates():
         "current_version": local_ver,
         "latest_version": remote_ver,
         "update_available": update_needed,
+        "major_change": update_needed and parse_semver(remote_ver)[0] > parse_semver(local_ver)[0],
+        "changelog": changelog_since(fetch_remote_changelog(), local_ver) if update_needed else [],
         "offline": False
     }
+
+
+def is_kit_source_repo(project_root):
+    """True when project_root is the dev-kit source repository, not a project that uses it."""
+    return (os.path.exists(os.path.join(project_root, "install.sh"))
+            and os.path.exists(os.path.join(project_root, "VERSION"))
+            and not os.path.exists(os.path.join(project_root, "dev-kit", "VERSION")))
 
 
 def perform_update(target_dir=None, tool="all"):
@@ -149,15 +186,9 @@ def perform_update(target_dir=None, tool="all"):
     project_root = target_dir or os.getcwd()
     target_dev_kit = os.path.join(project_root, "dev-kit")
 
-    # If running inside dev-kit repository itself: git pull if git repo
-    if os.path.exists(os.path.join(project_root, ".git")) and os.path.exists(os.path.join(project_root, "install.sh")):
-        try:
-            res = subprocess.run(["git", "pull", "origin", "main"], cwd=project_root, capture_output=True, text=True)
-            if res.returncode == 0:
-                print("✅ Successfully pulled latest changes via git.")
-                return True
-        except Exception:
-            pass
+    if is_kit_source_repo(project_root):
+        print("This is the dev-kit source repository; update it with git instead.", file=sys.stderr)
+        return False
 
     # Standard consumer installation: download tarball
     print(f"📦 Downloading latest dev-kit into {target_dev_kit}...")
@@ -210,11 +241,6 @@ def main():
     update_p.add_argument("--tool", default="all", help="Target tool (claude, antigravity, cursor, all)")
     update_p.add_argument("--target-dir", default=None, help="Root directory of consumer project")
 
-    # Auto
-    auto_p = subparsers.add_parser("auto", help="Automatically check and apply update if available without prompts")
-    auto_p.add_argument("--tool", default="all", help="Target tool (claude, antigravity, cursor, all)")
-    auto_p.add_argument("--target-dir", default=None, help="Root directory of consumer project")
-
     args = parser.parse_args()
 
     if args.command == "check":
@@ -226,6 +252,8 @@ def main():
                 print(f"dev-kit v{status['current_version']} (Offline / Could not check for updates)")
             elif status["update_available"]:
                 print(f"🔔 Update available: v{status['current_version']} ➔ v{status['latest_version']}")
+                for entry in status["changelog"]:
+                    print(f"  {entry['version']}: " + " ".join(entry["notes"]))
             else:
                 print(f"✅ dev-kit is up to date (v{status['current_version']})")
         return 0
@@ -233,14 +261,6 @@ def main():
     elif args.command == "update":
         success = perform_update(target_dir=args.target_dir, tool=args.tool)
         return 0 if success else 1
-
-    elif args.command == "auto":
-        status = check_for_updates()
-        if status.get("update_available"):
-            print(f"⚡ dev-kit auto-update found: v{status['current_version']} ➔ v{status['latest_version']}. Applying update...")
-            success = perform_update(target_dir=args.target_dir, tool=args.tool)
-            return 0 if success else 1
-        return 0
 
     return 0
 

@@ -1,6 +1,6 @@
 # dev-kit
 
-Current version: **0.4.9** (see `CHANGELOG.md`). Full documentation: [docs/GUIDE.md](docs/GUIDE.md). Protocol & workflow: [RUN.md](RUN.md).
+Current version: **0.5.0** (see `CHANGELOG.md`). Full documentation: [docs/GUIDE.md](docs/GUIDE.md). Protocol & workflow: [RUN.md](RUN.md).
 
 A portable autonomous software engineering squad: a **Project Manager & Tech Lead** orchestrator, specialized developers (**Database**, **Backend**, **Frontend**), and an independent **QA Engineer** quality gate that guarantees test suites pass and acceptance criteria are met before opening Pull Requests.
 
@@ -18,7 +18,7 @@ From the root of the project you want to develop on:
 curl -fsSL https://raw.githubusercontent.com/victorfigueira/dev-kit/main/get.sh | bash
 ```
 
-This downloads the kit into `dev-kit/` and installs the commands for Claude Code, Antigravity, and Cursor. For one tool only, add its name at the end: `| bash -s -- antigravity` (or `claude`, `cursor`). To pin a version, put `DEV_KIT_REF=v0.4.9` before `bash`.
+This downloads the kit into `dev-kit/` and installs the commands for Claude Code, Antigravity, and Cursor. For one tool only, add its name at the end: `| bash -s -- antigravity` (or `claude`, `cursor`). To pin a version, put `DEV_KIT_REF=v0.5.0` before `bash`.
 
 Keep squad working plans, temporary files, and the kit copy out of git:
 
@@ -47,6 +47,10 @@ Run `/dev` directly. If no ticket key is specified, the Tech Lead automatically 
 | **Claude Code** | `/dev [TICKET_KEY]` | `/dev-qa` | `/dev` (stops after PLAN.md approval) |
 | **Cursor** | "Follow dev-kit/RUN.md (`/dev`)" | "Follow dev-kit/agents/qa.md" | "Write dev/PLAN.md using dev-kit/templates/PLAN.md" |
 | **Any other agent** | "Follow dev-kit/RUN.md (`/dev`)" | "Run python3 dev-kit/tools/test_runner.py" | "Fill in dev-kit/templates/PLAN.md" |
+
+### Update the kit in a project
+
+Every `/dev` run checks for a newer version first, summarises what is new and installs it only after you confirm (add `no-update` to skip the check, for example `/dev PAS-1 no-update`). You can also run `/dev-check-update` in the agent chat (Claude Code or Antigravity). The update replaces `dev-kit/`, refreshes the kit's own adapters and keeps `dev/`. Reload the IDE window afterwards. The steps are in [UPDATE.md](UPDATE.md).
 
 ### Private repository or no curl
 
@@ -141,6 +145,7 @@ Database changes are the most critical operations in software engineering. `dev-
 |---|---|
 | `RUN.md` | Squad instructions & step-by-step orchestrator execution protocol. |
 | `VERSION` | Kit version, recorded in plans and pull requests. |
+| `UPDATE.md` | Update check used by `/dev` and `/dev-check-update`. |
 | `RULES.md` | Engineering standards: git branching, safe migrations, and quality gate rules. |
 | `CHANGELOG.md` | Complete release history and roadmap notes. |
 | `docs/GUIDE.md` | Full reference manual: workflows, roles, test runners, and Jira synchronization. |
@@ -158,8 +163,8 @@ Database changes are the most critical operations in software engineering. `dev-
 
 | Tool | Files Installed in Your Project |
 |---|---|
-| **Antigravity** | `.agents/skills/dev-feature/SKILL.md`, `.agents/skills/dev-qa/SKILL.md` |
-| **Claude Code** | `.claude/commands/dev-feature.md`, `.claude/commands/dev-qa.md` |
+| **Antigravity** | `.agents/skills/{dev,dev-feature,dev-qa,dev-check-update}/SKILL.md` |
+| **Claude Code** | `.claude/commands/{dev,dev-feature,dev-qa,dev-check-update}.md` |
 | **Cursor** | `.cursor/rules/dev.mdc` |
 | **Shared** | `dev/project-context.md` |
 

@@ -1,8 +1,12 @@
+---
+description: Run the dev-kit squad on a Jira ticket (or the top backlog ticket)
+argument-hint: "[TICKET_KEY] [no-update]"
+---
 # /dev
 
-Run the autonomous development squad following `dev-kit/RUN.md`:
+Run the autonomous development squad following `dev-kit/RUN.md`. Arguments: $ARGUMENTS (`no-update` skips the update check; any other word is the ticket key).
 
-1. Automatically check and apply dev-kit updates: `python3 dev-kit/tools/updater.py auto`.
+1. Check for dev-kit updates following Step 0 of `dev-kit/RUN.md` (ask before installing). Skip it if the arguments contain `no-update`.
 2. If `dev/project-context.md` is missing, auto-detect the project stack and initialize it.
 3. If no ticket argument is passed, enter **Continuous Backlog Mode**:
    - Query project backlog: `python3 dev-kit/tools/jira_sync.py next`.

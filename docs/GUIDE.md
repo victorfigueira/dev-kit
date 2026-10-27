@@ -121,6 +121,7 @@ Edit `dev/project-context.md` to specify:
 |---|---|---|
 | `/dev-feature` | `/dev-feature <TICKET_KEY>` | Launches the full squad pipeline: PM plans, devs implement, QA verifies and opens PR. |
 | `/dev-qa` | `/dev-qa` | Runs the QA Quality Gate independently on the current git diff. |
+| `/dev-check-update` | `/dev-check-update` | Checks GitHub for a newer dev-kit, summarises what is new and installs it after you confirm. |
 
 ### CLI Tools
 
@@ -139,8 +140,10 @@ python3 dev-kit/tools/jira_sync.py transition <TICKET_KEY> "In Progress"
 # Post comment with PR test summary
 python3 dev-kit/tools/jira_sync.py comment <TICKET_KEY> "PR ready with tests passing."
 
-# Check and install dev-kit updates
+# Check for dev-kit updates (installed and latest version, changelog since yours)
 python3 dev-kit/tools/updater.py check [--json]
+
+# Install the latest version (the agent asks you first, see UPDATE.md)
 python3 dev-kit/tools/updater.py update
 
 # Calculate and report token consumption & development cost in USD

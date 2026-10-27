@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 – 28/10/2026
+- Replaced the silent auto-update with a confirmed update flow (DK-2): new `UPDATE.md`; `RUN.md` Step 0 now shows what is new and asks before installing, and `no-update` skips the check.
+- Added `/dev-check-update` for Claude Code and Antigravity.
+- `tools/updater.py`: removed the `auto` command; `check` now reports `major_change` and the changelog entries newer than the installed version; `update` no longer runs `git pull` and refuses to run inside the dev-kit source repository.
+- Claude Code `/dev` command now receives its arguments (`[TICKET_KEY] [no-update]`).
+
 ## 0.4.9 – 27/10/2026
 - Added macOS SSL certificate fallback (`safe_urlopen`) in `tools/updater.py` to prevent `[SSL: CERTIFICATE_VERIFY_FAILED]` when checking for updates against GitHub raw/API.
 - Resolved bug where updater falsely detected consumer projects as offline, blocking automatic synchronization of newer dev-kit versions.

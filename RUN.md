@@ -55,11 +55,11 @@ sequenceDiagram
 ## Step-by-step Instructions
 
 ### Step 0: Check for dev-kit Updates
-1. Check and automatically apply any newer version of `dev-kit`:
-   ```bash
-   python3 dev-kit/tools/updater.py auto
-   ```
-   If updated, `dev-kit` synchronizes tools, agents, and skills silently. If offline or already up-to-date, it continues immediately without interruption.
+Skip this step only if the user wrote `no-update` with the command.
+1. Follow steps 1 to 3 of `dev-kit/UPDATE.md` (check, compare, show what is new). If GitHub cannot be reached, say so in one line and continue with the installed version.
+2. If a newer version exists, ask the user whether to update now (step 4 of `UPDATE.md`) and wait for the answer. Never install without a clear yes.
+3. If the user says yes, finish `UPDATE.md` (install and report), then read this file again from the start, because it may have changed, and continue with the task the user asked for. Skip the update check on this second reading.
+4. If the user says no, continue with the installed version.
 
 ### Step 1: Ingest Ticket & Context
 1. If `dev/project-context.md` does not exist, automatically inspect the repository (`package.json`, test scripts, migrations) and initialize it.
