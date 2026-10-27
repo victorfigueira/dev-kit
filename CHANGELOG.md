@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 – 27/10/2026
+- Unified `/dev` command: single intuitive entry point across Antigravity, Claude Code, and Cursor (`/dev-feature` preserved as alias).
+- Autonomous Backlog Orchestration: Tech Lead automatically queries and ranks Jira sprint backlogs (`python3 tools/jira_sync.py backlog` and `next`) when no ticket key is passed.
+- Transparent Context Auto-detection: Running `/dev` on a fresh project automatically detects the tech stack and initializes `dev/project-context.md` without manual preliminary steps.
+- Sequential Queue Progression: Tech Lead coordinates ticket resolution, reports sign-off, and seamlessly moves to the next prioritized ticket in the sprint.
+- Updated `tools/jira_sync.py`, `tools/jira_sync_test.py`, `agents/pm.md`, `install.sh`, `README.md`, `RUN.md`, and `docs/GUIDE.md`.
+
 ## 0.1.2 – 26/10/2026
 - Added Squad Delivery & Quality Gate Scorecard to `templates/PULL_REQUEST.md` for clear layer-by-layer visual reporting (Database, Backend, Frontend, QA).
 - Added Squad Delivery Matrix and Assumptions & Risks sections to `templates/PLAN.md`.

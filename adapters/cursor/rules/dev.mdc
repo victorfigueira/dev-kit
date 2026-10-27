@@ -4,12 +4,12 @@ globs: *
 alwaysApply: true
 ---
 
-# dev-kit Autonomous Development Squad
+# dev-kit Autonomous Development Squad (`/dev`)
 
-When asked to implement a feature, resolve a Jira ticket, or fix a bug, follow `dev-kit/RUN.md` and `dev-kit/RULES.md`:
+When asked to run `/dev`, implement a feature, resolve a Jira ticket, or fix a bug, follow `dev-kit/RUN.md` and `dev-kit/RULES.md`:
 
-1. **Role of PM:** Formulate `dev/PLAN.md` before writing code. Identify affected layers (Database, Backend, Frontend).
+1. **Role of PM & Tech Lead:** If no ticket is provided, query the project backlog via `python3 dev-kit/tools/jira_sync.py next`. Formulate `dev/PLAN.md` with the Squad Delivery Matrix before writing code. Identify affected layers (Database, Backend, Frontend).
 2. **Database Changes:** Follow `dev-kit/agents/database.md`. Always write migrations with both `up` and `down`, add indexes on foreign keys, and test against local database.
-3. **Backend Changes:** Follow `dev-kit/agents/backend.md`. Enforce strict input validation (Zod/Pydantic) and write unit tests.
-4. **Frontend Changes:** Follow `dev-kit/agents/frontend.md`. Implement loading, error, empty, and success states.
-5. **Quality Gate:** Before declaring work done, run `python3 dev-kit/tools/test_runner.py` and verify all tests pass.
+3. **Backend Changes:** Follow `dev-kit/agents/backend.md`. Enforce strict input validation (Zod/Pydantic), AuthN/AuthZ guards, and write unit tests.
+4. **Frontend Changes:** Follow `dev-kit/agents/frontend.md`. Implement all 4 async states (Loading, Error, Empty, Success), mirrored form validation, and accessibility.
+5. **Quality Gate:** Before declaring work done, run `python3 dev-kit/tools/test_runner.py --typecheck --lint` and verify all tests pass with zero regressions.

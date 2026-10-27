@@ -16,7 +16,10 @@ sequenceDiagram
     participant QA as QA Verifier
     participant G as Git & PR
 
-    U->>PM: /dev-feature <TICKET_KEY>
+    U->>PM: /dev [TICKET_KEY]
+    alt No Ticket Provided
+        PM->>U: Query Jira backlog (python3 tools/jira_sync.py next)
+    end
     PM->>U: Read requirements & Acceptance Criteria
     PM->>PM: Formulate dev/PLAN.md
     PM->>G: git checkout -b feat/<TICKET>-<slug>
@@ -52,16 +55,21 @@ sequenceDiagram
 ## Step-by-step Instructions
 
 ### Step 1: Ingest Ticket & Context
-1. Extract ticket key (e.g. `AK-101`) or user feature brief.
-2. If Jira credentials are configured:
-   ```bash
-   python3 dev-kit/tools/jira_sync.py fetch <TICKET_KEY> --json
-   ```
-   Transition ticket status to **In Progress**:
+1. If `dev/project-context.md` does not exist, automatically inspect the repository (`package.json`, test scripts, migrations) and initialize it.
+2. Ingest the task:
+   - **Specified Ticket:** Read key from arguments (e.g. `PAS-101`) or user feature brief:
+     ```bash
+     python3 dev-kit/tools/jira_sync.py fetch <TICKET_KEY> --json
+     ```
+   - **Autonomous Backlog Mode (No argument passed):** The Tech Lead queries the project backlog and takes the top prioritized ticket:
+     ```bash
+     python3 dev-kit/tools/jira_sync.py next
+     ```
+3. Transition ticket status to **In Progress**:
    ```bash
    python3 dev-kit/tools/jira_sync.py transition <TICKET_KEY> "In Progress"
    ```
-3. Read `dev/project-context.md` (or `dev-kit/templates/project-context.md`) to verify tech stack, package manager, and test commands.
+4. Read `dev/project-context.md` to verify tech stack, base branch, package manager, and test commands.
 
 ### Step 2: Formulate Technical Plan
 1. Create `dev/` directory if missing.

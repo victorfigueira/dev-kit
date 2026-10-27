@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 """Unit tests for dev-kit Jira synchronization tool."""
 import unittest
-from tools.jira_sync import extract_acceptance_criteria, fetch_ticket
+from tools.jira_sync import (
+    extract_acceptance_criteria,
+    fetch_ticket,
+    fetch_backlog,
+    fetch_next_ticket,
+    detect_project_key
+)
 
 
 class TestJiraSync(unittest.TestCase):
@@ -32,6 +38,22 @@ AC-2: Returns 400 Bad Request on invalid comment ID
         self.assertEqual(ticket["key"], "AK-101")
         self.assertTrue(ticket.get("offline"))
         self.assertTrue(len(ticket["acceptance_criteria"]) > 0)
+
+    def test_offline_fetch_backlog(self):
+        backlog = fetch_backlog("PAS", limit=3)
+        self.assertEqual(len(backlog), 3)
+        self.assertEqual(backlog[0]["key"], "PAS-101")
+        self.assertEqual(backlog[0]["status"], "In Progress")
+        self.assertEqual(backlog[1]["key"], "PAS-102")
+
+    def test_offline_fetch_next_ticket(self):
+        ticket = fetch_next_ticket("PAS")
+        self.assertIsNotNone(ticket)
+        self.assertEqual(ticket["key"], "PAS-101")
+        self.assertEqual(ticket["priority"], "High")
+
+    def test_detect_project_key_provided(self):
+        self.assertEqual(detect_project_key("abc"), "ABC")
 
 
 if __name__ == "__main__":

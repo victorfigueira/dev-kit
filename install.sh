@@ -11,15 +11,17 @@ echo "🚀 Installing dev-kit adapters into: $TARGET_DIR"
 install_claude() {
     mkdir -p "$TARGET_DIR/.claude/commands"
     cp "$KIT_DIR/adapters/claude/commands/"*.md "$TARGET_DIR/.claude/commands/"
-    echo "  ✓ Claude Code commands installed: /dev-feature, /dev-qa"
+    echo "  ✓ Claude Code commands installed: /dev, /dev-feature, /dev-qa"
 }
 
 install_antigravity() {
+    mkdir -p "$TARGET_DIR/.agents/skills/dev"
     mkdir -p "$TARGET_DIR/.agents/skills/dev-feature"
     mkdir -p "$TARGET_DIR/.agents/skills/dev-qa"
+    cp "$KIT_DIR/adapters/antigravity/skills/dev/SKILL.md" "$TARGET_DIR/.agents/skills/dev/"
     cp "$KIT_DIR/adapters/antigravity/skills/dev-feature/SKILL.md" "$TARGET_DIR/.agents/skills/dev-feature/"
     cp "$KIT_DIR/adapters/antigravity/skills/dev-qa/SKILL.md" "$TARGET_DIR/.agents/skills/dev-qa/"
-    echo "  ✓ Antigravity skills installed: dev-feature, dev-qa"
+    echo "  ✓ Antigravity skills installed: dev, dev-feature, dev-qa"
 }
 
 install_cursor() {

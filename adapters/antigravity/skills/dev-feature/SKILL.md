@@ -1,26 +1,10 @@
 ---
 name: dev-feature
-description: Autonomous feature development squad. Reads ticket/spec, architects PLAN.md, dispatches specialized developers, and enforces QA Quality Gate before commit.
+description: Alias for /dev. Autonomous feature development squad. Reads ticket/spec, architects PLAN.md, dispatches specialized developers, and enforces QA Quality Gate.
 ---
 
-# Autonomous Feature Development Squad
+# Autonomous Feature Development Squad (`/dev-feature`)
 
-Follow the execution protocol in `dev-kit/RUN.md`.
+> **Note:** `/dev-feature` is an alias for `/dev`. Both commands execute the same squad orchestration protocol.
 
-## Workflow
-1. Ingest the Jira ticket key or feature description from user input:
-   ```bash
-   python3 dev-kit/tools/jira_sync.py fetch "$1" --json
-   ```
-2. Act as the Project Manager & Tech Lead (`dev-kit/agents/pm.md`):
-   - Formulate technical specification in `dev/PLAN.md`.
-   - Setup feature branch `feat/<TICKET>-<slug>`.
-3. Dispatch specialized developer subagents (`invoke_subagent`):
-   - `database-engineer` (`dev-kit/agents/database.md`) if schema/migrations are required.
-   - `backend-dev` (`dev-kit/agents/backend.md`) for API endpoints and business logic.
-   - `frontend-dev` (`dev-kit/agents/frontend.md`) for UI and client state.
-4. Run QA Quality Gate (`dev-kit/agents/qa.md`):
-   ```bash
-   python3 dev-kit/tools/test_runner.py --typecheck --lint
-   ```
-5. If green, commit changes and prepare `dev/PULL_REQUEST.md`.
+Follow the execution protocol in `dev-kit/RUN.md` and `dev-kit/adapters/antigravity/skills/dev/SKILL.md`.

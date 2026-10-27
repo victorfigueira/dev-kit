@@ -23,5 +23,5 @@ htmlcov/
 Thumbs.db
 
 # Workspace artifacts
-dev/
+/dev/
 *.log

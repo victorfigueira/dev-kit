@@ -8,6 +8,8 @@ Connects to Jira Cloud via REST API using standard environment variables:
 
 Usage:
   python3 dev-kit/tools/jira_sync.py fetch <TICKET_KEY> [--json]
+  python3 dev-kit/tools/jira_sync.py backlog [PROJECT_KEY] [--limit N] [--json]
+  python3 dev-kit/tools/jira_sync.py next [PROJECT_KEY] [--json]
   python3 dev-kit/tools/jira_sync.py transition <TICKET_KEY> <STATUS_NAME_OR_ID>
   python3 dev-kit/tools/jira_sync.py comment <TICKET_KEY> <COMMENT_TEXT>
 """
@@ -18,6 +20,7 @@ import os
 import re
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 
 
@@ -41,6 +44,27 @@ def extract_acceptance_criteria(description):
     return criteria
 
 
+def extract_adf_text(node):
+    """Recursively extract plain text from Atlassian Document Format (ADF) nodes."""
+    if not isinstance(node, dict):
+        return ""
+    text = node.get("text", "")
+    for child in node.get("content", []):
+        child_text = extract_adf_text(child)
+        if child_text:
+            text = f"{text}\n{child_text}" if text else child_text
+    return text.strip()
+
+
+def parse_description(desc_raw):
+    """Parse description whether it is plain text or an ADF structure."""
+    if isinstance(desc_raw, str):
+        return desc_raw
+    elif isinstance(desc_raw, dict):
+        return extract_adf_text(desc_raw)
+    return ""
+
+
 def get_auth_header():
     base_url = os.environ.get("JIRA_BASE_URL")
     email = os.environ.get("JIRA_USER_EMAIL")
@@ -54,6 +78,32 @@ def get_auth_header():
     return base_url.rstrip("/"), {"Authorization": auth_header, "Content-Type": "application/json"}
 
 
+def detect_project_key(provided_key=None):
+    """Resolve project key from argument, dev/project-context.md, or environment."""
+    if provided_key:
+        return provided_key.strip().upper()
+
+    env_key = os.environ.get("JIRA_PROJECT_KEY")
+    if env_key:
+        return env_key.strip().upper()
+
+    # Try reading from dev/project-context.md or dev-kit/templates/project-context.md
+    context_paths = ["dev/project-context.md", "dev-kit/templates/project-context.md"]
+    for path in context_paths:
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                    # Match patterns like: jira.project_key: PAS or Project key PAS
+                    match = re.search(r"(?:project_key|Project key)[:\s]+([A-Z0-9]+)", content, re.IGNORECASE)
+                    if match:
+                        return match.group(1).upper()
+            except Exception:
+                pass
+
+    return "DEV"
+
+
 def fetch_ticket(ticket_key):
     """Fetch ticket details from Jira or return mock payload if offline."""
     base_url, headers = get_auth_header()
@@ -65,6 +115,7 @@ def fetch_ticket(ticket_key):
             "description": "- [ ] Implement required functionality\n- [ ] Write unit tests\n- [ ] Verify test suite passes",
             "type": "Task",
             "status": "To Do",
+            "priority": "Medium",
             "acceptance_criteria": [
                 "Implement required functionality",
                 "Write unit tests",
@@ -73,26 +124,13 @@ def fetch_ticket(ticket_key):
             "offline": True
         }
 
-    url = f"{base_url}/rest/api/3/issue/{ticket_key}?fields=summary,description,issuetype,status"
+    url = f"{base_url}/rest/api/3/issue/{ticket_key}?fields=summary,description,issuetype,status,priority"
     req = urllib.request.Request(url, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             fields = data.get("fields", {})
-            desc_raw = fields.get("description")
-            # Extract plain text if ADF (Atlassian Document Format)
-            desc_text = ""
-            if isinstance(desc_raw, str):
-                desc_text = desc_raw
-            elif isinstance(desc_raw, dict):
-                # Simple extraction of text blocks from ADF
-                def extract_adf_text(node):
-                    t = node.get("text", "")
-                    for child in node.get("content", []):
-                        t += "\n" + extract_adf_text(child)
-                    return t
-                desc_text = extract_adf_text(desc_raw).strip()
-
+            desc_text = parse_description(fields.get("description"))
             acs = extract_acceptance_criteria(desc_text)
             return {
                 "key": ticket_key,
@@ -100,6 +138,7 @@ def fetch_ticket(ticket_key):
                 "description": desc_text,
                 "type": fields.get("issuetype", {}).get("name", "Task"),
                 "status": fields.get("status", {}).get("name", "Unknown"),
+                "priority": fields.get("priority", {}).get("name", "Medium"),
                 "acceptance_criteria": acs,
                 "offline": False
             }
@@ -111,16 +150,111 @@ def fetch_ticket(ticket_key):
             "description": "",
             "type": "Task",
             "status": "Unknown",
+            "priority": "Medium",
             "acceptance_criteria": [],
             "error": str(e)
         }
+
+
+def fetch_backlog(project_key=None, limit=10):
+    """Fetch active and prioritized sprint/backlog tickets for the given project."""
+    pkey = detect_project_key(project_key)
+    base_url, headers = get_auth_header()
+
+    if not base_url:
+        # Structured offline backlog mock
+        return [
+            {
+                "key": f"{pkey}-101",
+                "summary": f"Setup core infrastructure and schema models for {pkey}",
+                "description": "- [ ] Define models\n- [ ] Implement initial migrations\n- [ ] Run test suite",
+                "type": "Task",
+                "status": "In Progress",
+                "priority": "High",
+                "acceptance_criteria": [
+                    "Define models",
+                    "Implement initial migrations",
+                    "Run test suite"
+                ],
+                "offline": True
+            },
+            {
+                "key": f"{pkey}-102",
+                "summary": f"Implement domain business logic and API endpoints for {pkey}",
+                "description": "- [ ] Add input validation schemas\n- [ ] Decouple service layers\n- [ ] Add unit tests",
+                "type": "Task",
+                "status": "To Do",
+                "priority": "Medium",
+                "acceptance_criteria": [
+                    "Add input validation schemas",
+                    "Decouple service layers",
+                    "Add unit tests"
+                ],
+                "offline": True
+            },
+            {
+                "key": f"{pkey}-103",
+                "summary": f"Build user interface components and state handling for {pkey}",
+                "description": "- [ ] Implement 4 async UI states\n- [ ] Add keyboard navigation and a11y\n- [ ] Verify responsive layout",
+                "type": "Task",
+                "status": "To Do",
+                "priority": "Low",
+                "acceptance_criteria": [
+                    "Implement 4 async UI states",
+                    "Add keyboard navigation and a11y",
+                    "Verify responsive layout"
+                ],
+                "offline": True
+            }
+        ][:limit]
+
+    jql = f'project = "{pkey}" AND statusCategory in ("To Do", "In Progress") ORDER BY rank ASC, priority DESC, created ASC'
+    query_str = urllib.parse.urlencode({
+        "jql": jql,
+        "maxResults": limit,
+        "fields": "summary,description,issuetype,status,priority"
+    })
+    url = f"{base_url}/rest/api/3/search?{query_str}"
+    req = urllib.request.Request(url, headers=headers)
+
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            issues = data.get("issues", [])
+            results = []
+            for issue in issues:
+                fields = issue.get("fields", {})
+                desc_text = parse_description(fields.get("description"))
+                acs = extract_acceptance_criteria(desc_text)
+                results.append({
+                    "key": issue.get("key"),
+                    "summary": fields.get("summary", ""),
+                    "description": desc_text,
+                    "type": fields.get("issuetype", {}).get("name", "Task"),
+                    "status": fields.get("status", {}).get("name", "Unknown"),
+                    "priority": fields.get("priority", {}).get("name", "Medium"),
+                    "acceptance_criteria": acs,
+                    "offline": False
+                })
+            return results
+    except Exception as e:
+        print(f"Error fetching Jira backlog: {e}", file=sys.stderr)
+        return []
+
+
+def fetch_next_ticket(project_key=None):
+    """Retrieve the single top-priority pending ticket from the project backlog."""
+    backlog = fetch_backlog(project_key=project_key, limit=1)
+    if backlog:
+        return backlog[0]
+    return None
 
 
 def transition_ticket(ticket_key, target_status):
     """Transition Jira ticket status."""
     base_url, headers = get_auth_header()
     if not base_url:
-        print(f"ℹ️  [Offline mode] Ticket {ticket_key} transition to '{target_status}' recorded.")
+        print(f"Offline mode: simulated transition of {ticket_key} to '{target_status}'.")
         return True
 
     # 1. Fetch available transitions
@@ -128,39 +262,38 @@ def transition_ticket(ticket_key, target_status):
     req = urllib.request.Request(trans_url, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
-            trans_data = json.loads(resp.read().decode("utf-8"))
-            transitions = trans_data.get("transitions", [])
+            data = json.loads(resp.read().decode("utf-8"))
+            transitions = data.get("transitions", [])
             matched_id = None
             for t in transitions:
-                if t.get("name", "").lower() == target_status.lower() or t.get("id") == target_status:
+                if t.get("name", "").lower() == target_status.lower() or t.get("id") == str(target_status):
                     matched_id = t.get("id")
                     break
 
             if not matched_id:
-                available = [t.get("name") for t in transitions]
-                print(f"Error: Transition '{target_status}' not found. Available: {available}", file=sys.stderr)
+                available = ", ".join([f"'{t.get('name')}' (id: {t.get('id')})" for t in transitions])
+                print(f"Transition '{target_status}' not found for {ticket_key}. Available: {available}", file=sys.stderr)
                 return False
 
-            # 2. Execute transition
-            body = json.dumps({"transition": {"id": matched_id}}).encode("utf-8")
-            post_req = urllib.request.Request(trans_url, data=body, headers=headers, method="POST")
+            # 2. Perform transition
+            post_data = json.dumps({"transition": {"id": matched_id}}).encode("utf-8")
+            post_req = urllib.request.Request(trans_url, data=post_data, headers=headers, method="POST")
             with urllib.request.urlopen(post_req, timeout=15):
-                print(f"✅ Ticket {ticket_key} successfully transitioned to '{target_status}'.")
+                print(f"✅ Successfully transitioned {ticket_key} to '{target_status}'.")
                 return True
     except Exception as e:
-        print(f"Error executing Jira transition: {e}", file=sys.stderr)
+        print(f"Error transitioning ticket in Jira: {e}", file=sys.stderr)
         return False
 
 
 def comment_ticket(ticket_key, comment_text):
-    """Add a comment to Jira ticket."""
+    """Add a structured markdown comment to a Jira ticket."""
     base_url, headers = get_auth_header()
     if not base_url:
-        print(f"ℹ️  [Offline mode] Comment for {ticket_key} recorded:\n{comment_text}")
+        print(f"Offline mode: simulated comment on {ticket_key}: {comment_text}")
         return True
 
     url = f"{base_url}/rest/api/3/issue/{ticket_key}/comment"
-    # ADF formatted body
     body_data = {
         "body": {
             "type": "doc",
@@ -192,6 +325,17 @@ def main():
     fetch_p.add_argument("ticket_key", help="Jira ticket key (e.g. AK-101)")
     fetch_p.add_argument("--json", action="store_true", help="Output JSON format")
 
+    # Backlog
+    backlog_p = subparsers.add_parser("backlog", help="Fetch active/pending backlog tickets for project")
+    backlog_p.add_argument("project_key", nargs="?", default=None, help="Jira project key (e.g. PAS)")
+    backlog_p.add_argument("--limit", type=int, default=10, help="Max tickets to fetch")
+    backlog_p.add_argument("--json", action="store_true", help="Output JSON format")
+
+    # Next
+    next_p = subparsers.add_parser("next", help="Fetch next prioritized ticket ready for development")
+    next_p.add_argument("project_key", nargs="?", default=None, help="Jira project key (e.g. PAS)")
+    next_p.add_argument("--json", action="store_true", help="Output JSON format")
+
     # Transition
     trans_p = subparsers.add_parser("transition", help="Transition ticket status")
     trans_p.add_argument("ticket_key", help="Jira ticket key (e.g. AK-101)")
@@ -210,13 +354,41 @@ def main():
             print(json.dumps(ticket, indent=2))
         else:
             print(f"\n📋 Jira Ticket: {ticket['key']} · {ticket['summary']}")
-            print(f"   Type: {ticket['type']} | Status: {ticket['status']}")
+            print(f"   Type: {ticket['type']} | Status: {ticket['status']} | Priority: {ticket.get('priority', 'Medium')}")
             print("\nAcceptance Criteria:")
             if ticket["acceptance_criteria"]:
                 for ac in ticket["acceptance_criteria"]:
                     print(f"   [ ] {ac}")
             else:
                 print("   (No explicit checkbox criteria found in description)")
+            print()
+        return 0
+
+    elif args.command == "backlog":
+        tickets = fetch_backlog(args.project_key, limit=args.limit)
+        if args.json:
+            print(json.dumps(tickets, indent=2))
+        else:
+            pkey = detect_project_key(args.project_key)
+            print(f"\n📋 Jira Backlog for Project [{pkey}] ({len(tickets)} tickets):")
+            for idx, t in enumerate(tickets, 1):
+                print(f"   {idx}. {t['key']} · {t['summary']} [{t['status']} · {t['priority']}]")
+            print()
+        return 0
+
+    elif args.command == "next":
+        ticket = fetch_next_ticket(args.project_key)
+        if not ticket:
+            print("No pending tickets found in backlog.")
+            return 1
+        if args.json:
+            print(json.dumps(ticket, indent=2))
+        else:
+            print(f"\n🎯 Next Prioritized Ticket: {ticket['key']} · {ticket['summary']}")
+            print(f"   Status: {ticket['status']} | Priority: {ticket['priority']}")
+            print("\nAcceptance Criteria:")
+            for ac in ticket.get("acceptance_criteria", []):
+                print(f"   [ ] {ac}")
             print()
         return 0
 

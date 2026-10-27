@@ -36,7 +36,7 @@ Instead of asking a single general-purpose prompt to write fullstack code (which
 * **Frontend Developer**: Builds accessible UI components and handles all 4 async states.
 * **QA Engineer**: Validates acceptance criteria and prevents broken code from being committed.
 
-Drop `dev-kit/` into any repository and run `/dev-feature` on any task or Jira ticket.
+Drop `dev-kit/` into any repository and run `/dev` on any task or Jira ticket, or let the Tech Lead auto-pick the top ticket from your backlog.
 
 ---
 
@@ -214,6 +214,7 @@ export JIRA_API_TOKEN="your-atlassian-api-token"
 
 * **Offline Fallback:** If Jira credentials are not present, `jira_sync.py` falls back gracefully to local mock mode so developers can run `dev-kit` without network access.
 * **Acceptance Criteria Extraction:** Automatically parses markdown checkboxes (`- [ ]`) and numbered lists (`AC-1:`) from the ticket description.
+* **Autonomous Backlog & Prioritization:** Run `python3 dev-kit/tools/jira_sync.py backlog [PROJECT_KEY]` or `next [PROJECT_KEY]` to automatically fetch, rank, and sequence sprint tickets.
 
 ---
 
