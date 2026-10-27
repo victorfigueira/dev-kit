@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.8 – 27/10/2026
+- Made Jira commenting and status transition commands explicit in `adapters/antigravity/skills/dev/SKILL.md` to guarantee autonomous execution during ticket completion.
+- Ensured end-to-end execution of `cost_tracker.py log` and `jira_sync.py transition` runs inside `dev-kit`'s autonomous sprint progression loop with zero manual intervention required.
+
 ## 0.4.7 – 27/10/2026
 - Implemented dynamic session transcript inspection in `tools/cost_tracker.py`: automatically inspects Antigravity's active session transcript (`transcript.jsonl`) to extract the exact model selected by the user (e.g. `Gemini 3.8 Flash (Medium)`, `Gemini 3.8 Flash (High)`, `Gemini 2.5 Pro`) instead of using hardcoded model defaults.
 - Added dynamic model pricing resolution via `get_model_info` that maps any detected AI model to its pricing tier while preserving the exact human-readable model name in reports, `dev/COSTS.md`, and Jira comments.

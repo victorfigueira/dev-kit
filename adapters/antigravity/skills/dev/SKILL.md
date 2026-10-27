@@ -37,8 +37,16 @@ The unified entry point for `dev-kit`. Follows the execution protocol in `dev-ki
    - Audit test authenticity and verify 100% of Acceptance Criteria.
 
 6. **Delivery & Continuous Auto-Progression (DO NOT STOP):**
-   - Create atomic conventional commit and push feature branch: `git push origin feat/<TICKET_KEY>-<slug>`.
-   - Log cost to cumulative `dev/COSTS.md` and Jira comment (`python3 dev-kit/tools/cost_tracker.py log --ticket <TICKET_KEY> ...`), and generate `dev/PULL_REQUEST.md`.
-   - Transition Jira ticket status to *In Review* / *Done*.
+   - Create atomic conventional commit: `git commit -m "feat(<scope>): <description>"`.
+   - Log cost, update cumulative `dev/COSTS.md` ledger, and post comment to Jira:
+     ```bash
+     python3 dev-kit/tools/cost_tracker.py log --ticket <TICKET_KEY> --summary "<TITLE>" --branch "feat/<TICKET_KEY>-<slug>"
+     ```
+   - Embed Squad Delivery Scorecard and cost metrics into `dev/PULL_REQUEST.md`.
+   - Push feature branch: `git push origin feat/<TICKET_KEY>-<slug>`.
+   - Transition Jira ticket status:
+     ```bash
+     python3 dev-kit/tools/jira_sync.py transition <TICKET_KEY> "In Review"
+     ```
    - Print completion summary in chat.
    - **Continuous Progression:** If running in Backlog Mode (`/dev`), **do not wait for another user prompt**. Return to base branch (`git checkout <BASE_BRANCH> && git pull origin <BASE_BRANCH>`), query the next ticket via `python3 dev-kit/tools/jira_sync.py next [PROJECT_KEY]`, and immediately proceed to implement it. Repeat until all sprint tickets are resolved or blocked.
