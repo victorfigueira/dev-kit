@@ -139,16 +139,16 @@ Once QA approves:
    git add .
    git commit -m "feat(<scope>): <concise description of changes>"
    ```
-2. Calculate token and USD development cost:
+2. Log development cost, update cumulative `dev/COSTS.md` ledger, and post comment to Jira:
    ```bash
-   python3 dev-kit/tools/cost_tracker.py report
+   python3 dev-kit/tools/cost_tracker.py log --ticket <TICKET_KEY> --summary "<TITLE>" --branch "feat/<TICKET_KEY>-<slug>"
    ```
-   Embed the cost table and token metrics into `dev/PULL_REQUEST.md` using `dev-kit/templates/PULL_REQUEST.md`.
+   Embed the cost table and token metrics into `dev/PULL_REQUEST.md` (and preserve `dev/PR_<TICKET_KEY>.md`).
 3. Push the feature branch to origin:
    ```bash
    git push origin feat/<TICKET_KEY>-<slug>
    ```
-4. If Jira is configured, post comment and transition to *In Review*:
+4. If Jira is configured, transition ticket status:
    ```bash
    python3 dev-kit/tools/jira_sync.py transition <TICKET_KEY> "In Review"
    ```

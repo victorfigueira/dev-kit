@@ -2,14 +2,17 @@
 """Token and USD Cost Calculation Engine for dev-kit.
 
 Tracks and estimates token consumption and development cost in USD across all squad roles.
+Maintains a cumulative cost ledger across tickets in dev/COSTS.md and dev/cost_ledger.json.
 
 Usage:
   python3 dev-kit/tools/cost_tracker.py report [--model MODEL] [--json]
+  python3 dev-kit/tools/cost_tracker.py log --ticket TICKET_KEY [--summary TITLE] [--branch BRANCH] [--model MODEL]
   python3 dev-kit/tools/cost_tracker.py record --layer LAYER --input-tokens N --output-tokens M [--model MODEL]
   python3 dev-kit/tools/cost_tracker.py estimate [--base-branch BRANCH] [--model MODEL] [--json]
   python3 dev-kit/tools/cost_tracker.py reset
 """
 import argparse
+import datetime
 import json
 import os
 import re
@@ -37,8 +40,19 @@ DEFAULT_MODEL = "claude-3-7-sonnet"
 def get_cost_file_path():
     """Locate session cost file in dev/ directory."""
     cwd = os.getcwd()
-    dev_dir = os.path.join(cwd, "dev")
-    return os.path.join(dev_dir, "session_cost.json")
+    return os.path.join(cwd, "dev", "session_cost.json")
+
+
+def get_ledger_file_path():
+    """Locate cumulative cost ledger file in dev/ directory."""
+    cwd = os.getcwd()
+    return os.path.join(cwd, "dev", "cost_ledger.json")
+
+
+def get_costs_md_path():
+    """Locate cumulative COSTS.md ledger in dev/ directory."""
+    cwd = os.getcwd()
+    return os.path.join(cwd, "dev", "COSTS.md")
 
 
 def detect_active_model(model_override=None):
@@ -132,8 +146,6 @@ def estimate_from_diff(base_branch=None, model_override=None):
     base_diff_tokens = max(500, diff_chars // 4)
     base_plan_tokens = max(400, plan_chars // 4)
 
-    # Autonomous engineering squads carry context accumulation across subagent turns:
-    # Distribution ratio across specialized squad roles
     layers_distribution = {
         "pm": {"name": "Project Manager & Tech Lead", "in_ratio": 2.5, "out_ratio": 0.8},
         "database": {"name": "Database Engineer (DBA)", "in_ratio": 1.5, "out_ratio": 0.5},
@@ -242,6 +254,103 @@ def format_markdown(report):
     return "\n".join(md)
 
 
+def render_costs_markdown(ledger):
+    """Render cumulative COSTS.md summary table."""
+    md_path = get_costs_md_path()
+    total_tokens = sum(e.get("total_tokens", 0) for e in ledger)
+    total_cost = sum(e.get("cost_usd", 0.0) for e in ledger)
+
+    lines = [
+        "# Project Development Cost & Token Ledger\n",
+        "Cumulative token consumption and expenditure tracked across all resolved tickets in `dev-kit`.\n",
+        f"- **Total Tickets Resolved:** {len(ledger)}",
+        f"- **Total Tokens Consumed:** {total_tokens:,}",
+        f"- **Grand Total Expenditure:** **${total_cost:.4f} USD**\n",
+        "| Date | Ticket | Summary | Model | Tokens | Cost (USD) | Branch |",
+        "|---|---|---|---|---|---|---|"
+    ]
+
+    for e in ledger:
+        lines.append(
+            f"| {e['date']} | **{e['ticket']}** | {e.get('summary', '')} | {e.get('model', '')} | {e.get('total_tokens', 0):,} | ${e.get('cost_usd', 0.0):.4f} | `{e.get('branch', '')}` |"
+        )
+
+    ticket_label = f"{len(ledger)} ticket{'s' if len(ledger) != 1 else ''} completed"
+    lines.append(f"| **TOTAL** | | **{ticket_label}** | | **{total_tokens:,}** | **${total_cost:.4f} USD** | |\n")
+
+    os.makedirs(os.path.dirname(md_path), exist_ok=True)
+    with open(md_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+
+def log_ticket_completion(ticket_key, summary=None, branch=None, model_override=None, post_jira=True):
+    """Log completed ticket to persistent ledger (dev/cost_ledger.json, dev/COSTS.md, and Jira)."""
+    report = generate_cost_report(model_override)
+    ledger_path = get_ledger_file_path()
+
+    ledger = []
+    if os.path.exists(ledger_path):
+        try:
+            with open(ledger_path, "r", encoding="utf-8") as f:
+                ledger = json.load(f)
+        except Exception:
+            ledger = []
+
+    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    clean_branch = branch or f"feat/{ticket_key}"
+
+    entry = {
+        "date": now_str,
+        "ticket": ticket_key,
+        "summary": summary or f"Task {ticket_key}",
+        "branch": clean_branch,
+        "model": report["model_name"],
+        "input_tokens": report["total_input_tokens"],
+        "output_tokens": report["total_output_tokens"],
+        "total_tokens": report["total_tokens"],
+        "cost_usd": report["total_cost_usd"]
+    }
+
+    # Replace existing entry for ticket if already logged, otherwise append
+    replaced = False
+    for i, item in enumerate(ledger):
+        if item.get("ticket") == ticket_key:
+            ledger[i] = entry
+            replaced = True
+            break
+    if not replaced:
+        ledger.append(entry)
+
+    os.makedirs(os.path.dirname(ledger_path), exist_ok=True)
+    with open(ledger_path, "w", encoding="utf-8") as f:
+        json.dump(ledger, f, indent=2)
+
+    render_costs_markdown(ledger)
+
+    # Post comment to Jira ticket
+    if post_jira:
+        try:
+            try:
+                from tools.jira_sync import comment_ticket
+            except ImportError:
+                sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+                from jira_sync import comment_ticket
+            comment_msg = (
+                f"✅ Squad development complete · Quality Gate: APPROVED\n"
+                f"• Branch: {entry['branch']}\n"
+                f"• Tokens: {entry['total_tokens']:,} ({entry['input_tokens']:,} in · {entry['output_tokens']:,} out)\n"
+                f"• Development Cost: ${entry['cost_usd']:.4f} USD ({entry['model']})\n"
+                f"• PR Document: dev/PR_{ticket_key}.md"
+            )
+            comment_ticket(ticket_key, comment_msg)
+        except Exception as e:
+            print(f"Note: Could not post comment to Jira: {e}", file=sys.stderr)
+
+    # Reset current session cost for next ticket
+    reset_session()
+    return entry
+
+
 def reset_session():
     """Reset the current session cost tracker file."""
     path = get_cost_file_path()
@@ -256,8 +365,16 @@ def main():
 
     # Report
     rep_p = subparsers.add_parser("report", help="Generate cost and token consumption report")
-    rep_p.add_argument("--model", default=None, help="Model override (e.g. claude-3-7-sonnet, gemini-2.5-pro, gpt-4o)")
+    rep_p.add_argument("--model", default=None, help="Model override")
     rep_p.add_argument("--json", action="store_true", help="Output JSON format")
+
+    # Log
+    log_p = subparsers.add_parser("log", help="Log ticket completion to cumulative ledger and Jira")
+    log_p.add_argument("--ticket", required=True, help="Jira ticket key (e.g. PAS-1)")
+    log_p.add_argument("--summary", default=None, help="Ticket summary/title")
+    log_p.add_argument("--branch", default=None, help="Git branch name")
+    log_p.add_argument("--model", default=None, help="Model override")
+    log_p.add_argument("--no-jira", action="store_true", help="Do not post Jira comment")
 
     # Record
     rec_p = subparsers.add_parser("record", help="Record layer token usage")
@@ -288,6 +405,17 @@ def main():
             print(json.dumps(report, indent=2))
         else:
             print(format_markdown(report))
+        return 0
+
+    elif args.command == "log":
+        entry = log_ticket_completion(
+            ticket_key=args.ticket,
+            summary=args.summary,
+            branch=args.branch,
+            model_override=args.model,
+            post_jira=not args.no_jira
+        )
+        print(f"✅ Logged {entry['ticket']} (${entry['cost_usd']:.4f} USD · {entry['total_tokens']:,} tokens) to dev/COSTS.md and dev/cost_ledger.json")
         return 0
 
     elif args.command == "estimate":

@@ -13,5 +13,5 @@ Run the autonomous development squad following `dev-kit/RUN.md`:
    - `backend-dev` (`dev-kit/agents/backend.md`)
    - `frontend-dev` (`dev-kit/agents/frontend.md`)
 6. Verify with `qa-verifier` (`dev-kit/agents/qa.md`) via `python3 dev-kit/tools/test_runner.py --typecheck --lint`.
-7. Once green, commit, push branch, output `dev/PULL_REQUEST.md` with Scorecard and Cost metrics, and transition Jira ticket.
+7. Once green, commit, push branch, log cost to `dev/COSTS.md` and Jira comment (`python3 dev-kit/tools/cost_tracker.py log --ticket <TICKET_KEY> ...`), output `dev/PULL_REQUEST.md`, and transition Jira ticket.
 8. **Continuous Progression:** If in Backlog Mode, checkout base branch, query next ticket, and seamlessly proceed to the next ticket automatically without waiting for another prompt.

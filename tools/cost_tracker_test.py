@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 """Unit tests for dev-kit cost tracker."""
+import os
 import unittest
-from tools.cost_tracker import calculate_cost, detect_active_model
+from tools.cost_tracker import (
+    calculate_cost,
+    detect_active_model,
+    log_ticket_completion,
+    get_ledger_file_path,
+    get_costs_md_path
+)
 
 
 class TestCostTracker(unittest.TestCase):
@@ -19,6 +26,19 @@ class TestCostTracker(unittest.TestCase):
         self.assertEqual(detect_active_model("claude-3-5-sonnet-20241022"), "claude-3-5-sonnet")
         self.assertEqual(detect_active_model("gemini-2.0-flash"), "gemini-2.0-flash")
         self.assertEqual(detect_active_model("unknown-model"), "claude-3-7-sonnet")
+
+    def test_log_ticket_completion(self):
+        entry = log_ticket_completion(
+            ticket_key="TEST-101",
+            summary="Test ticket logging",
+            branch="feat/TEST-101-test",
+            post_jira=False
+        )
+        self.assertEqual(entry["ticket"], "TEST-101")
+        self.assertTrue(entry["total_tokens"] > 0)
+        self.assertTrue(entry["cost_usd"] > 0)
+        self.assertTrue(os.path.exists(get_ledger_file_path()))
+        self.assertTrue(os.path.exists(get_costs_md_path()))
 
 
 if __name__ == "__main__":

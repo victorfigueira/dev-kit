@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.2 – 27/10/2026
+- Added persistent cumulative cost ledger (`dev/COSTS.md` and `dev/cost_ledger.json`) via `tools/cost_tracker.py log`.
+- Enforced automated Jira comment posting upon ticket completion with exact token consumption, USD development cost, branch link, and QA status.
+- Updated `RUN.md` Step 6, `agents/pm.md`, and adapters to execute cost logging and Jira commenting as an atomic hand-off command.
+
 ## 0.4.1 – 27/10/2026
 - Enforced Autonomous Continuous Sprint Mode in `/dev`: when run without ticket arguments, the Tech Lead automatically switches back to the base branch and proceeds to the next backlog ticket without pausing or waiting for another user prompt.
 - Added Step 8 in `RUN.md` defining the continuous backlog auto-progression loop.

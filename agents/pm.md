@@ -59,7 +59,7 @@ Follow `dev-kit/RULES.md` and use the plan template at `dev-kit/templates/PLAN.m
   ```bash
   git commit -m "feat(<scope>): <concise description>"
   ```
-- Calculate token & USD development cost via `python3 dev-kit/tools/cost_tracker.py report`.
+- Log development cost, update cumulative `dev/COSTS.md` ledger, and post Jira comment via `python3 dev-kit/tools/cost_tracker.py log --ticket <TICKET_KEY> --summary "<TITLE>" --branch "feat/<TICKET_KEY>-<slug>"`.
 - Generate `dev/PULL_REQUEST.md` (and preserve `dev/PR_<TICKET_KEY>.md`) with Squad Delivery Scorecard and Cost metrics.
 - Push the feature branch:
   ```bash
