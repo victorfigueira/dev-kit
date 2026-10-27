@@ -38,7 +38,7 @@ The unified entry point for `dev-kit`. Follows the execution protocol in `dev-ki
 
 6. **Delivery & Continuous Auto-Progression (DO NOT STOP):**
    - Create atomic conventional commit and push feature branch: `git push origin feat/<TICKET_KEY>-<slug>`.
-   - Log cost to cumulative `dev/COSTS.md` and Jira comment (`python3 dev-kit/tools/cost_tracker.py log --ticket <TICKET_KEY> ...`), and generate `dev/PULL_REQUEST.md`.
+   - Log cost to cumulative `dev/COSTS.md` and Jira comment (`python3 dev-kit/tools/cost_tracker.py log --ticket <TICKET_KEY> --model gemini-2.0-flash ...`), and generate `dev/PULL_REQUEST.md`.
    - Transition Jira ticket status to *In Review* / *Done*.
    - Print completion summary in chat.
    - **Continuous Progression:** If running in Backlog Mode (`/dev`), **do not wait for another user prompt**. Return to base branch (`git checkout <BASE_BRANCH> && git pull origin <BASE_BRANCH>`), query the next ticket via `python3 dev-kit/tools/jira_sync.py next [PROJECT_KEY]`, and immediately proceed to implement it. Repeat until all sprint tickets are resolved or blocked.

@@ -25,7 +25,14 @@ class TestCostTracker(unittest.TestCase):
     def test_detect_active_model(self):
         self.assertEqual(detect_active_model("claude-3-5-sonnet-20241022"), "claude-3-5-sonnet")
         self.assertEqual(detect_active_model("gemini-2.0-flash"), "gemini-2.0-flash")
-        self.assertEqual(detect_active_model("unknown-model"), "claude-3-7-sonnet")
+        self.assertEqual(detect_active_model("gemini 3.8 flash medium"), "gemini-2.0-flash")
+
+        from unittest.mock import patch
+        with patch.dict("os.environ", {}, clear=True):
+            self.assertEqual(detect_active_model("unknown-model"), "claude-3-7-sonnet")
+
+        with patch.dict("os.environ", {"ANTIGRAVITY_AGENT": "1"}, clear=True):
+            self.assertEqual(detect_active_model(), "gemini-2.0-flash")
 
     def test_log_ticket_completion(self):
         entry = log_ticket_completion(

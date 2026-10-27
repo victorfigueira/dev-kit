@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.6 – 27/10/2026
+- Added automatic environment-aware AI model detection in `tools/cost_tracker.py`: automatically defaults to `gemini-2.0-flash` ($0.10/M input, $0.40/M output) when running inside Google Antigravity / Gemini agents instead of Claude Sonnet.
+- Added alias resolution for Gemini models (e.g. `gemini 3.8 flash medium`, `gemini flash`).
+- Updated `adapters/antigravity/skills/dev/SKILL.md` to pass `--model gemini-2.0-flash` explicitly during ticket cost logging.
+
 ## 0.4.5 – 27/10/2026
 - Added automatic Jira credential discovery in `tools/jira_sync.py`: seamlessly detects Jira credentials from `.env`, `.env.local`, `dev/.env`, environment variables (`JIRA_BASE_URL`, `JIRA_USER_EMAIL`/`JIRA_EMAIL`, `JIRA_API_TOKEN`), and MCP configurations (`~/.gemini/antigravity/mcp_config.json`, `~/.cursor/mcp.json`, `~/.claude/mcp.json`) with zero manual setup.
 - Added macOS SSL certificate fallback (`safe_urlopen`) to prevent `CERTIFICATE_VERIFY_FAILED` errors during Jira Cloud REST API calls on macOS Python installations.

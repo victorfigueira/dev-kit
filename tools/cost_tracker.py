@@ -55,20 +55,51 @@ def get_costs_md_path():
     return os.path.join(cwd, "dev", "COSTS.md")
 
 
-def detect_active_model(model_override=None):
-    """Detect current model from override, environment, or default."""
-    if model_override:
-        clean = model_override.lower().strip()
-        for k in MODEL_PRICING:
-            if k in clean or clean in k:
-                return k
+def resolve_model_key(name):
+    """Map model name or alias to standard key."""
+    if not name:
+        return None
+    clean = name.lower().strip()
+    for k in MODEL_PRICING:
+        if k in clean or clean in k:
+            return k
+    if "flash" in clean:
+        return "gemini-2.0-flash"
+    if "gemini" in clean and "pro" in clean:
+        return "gemini-2.5-pro"
+    if "gemini" in clean:
+        return "gemini-2.0-flash"
+    if "opus" in clean:
+        return "claude-3-opus"
+    if "haiku" in clean:
+        return "claude-3-5-haiku"
+    if "claude" in clean or "sonnet" in clean:
+        return "claude-3-7-sonnet"
+    return None
 
-    env_model = os.environ.get("DEV_KIT_MODEL") or os.environ.get("CLAUDE_MODEL") or os.environ.get("AI_MODEL")
+
+def detect_active_model(model_override=None):
+    """Detect current model from override, environment, platform or default."""
+    # 1. Explicit argument override
+    if model_override:
+        matched = resolve_model_key(model_override)
+        if matched:
+            return matched
+
+    # 2. Environment variables
+    env_model = os.environ.get("DEV_KIT_MODEL") or os.environ.get("GEMINI_MODEL") or os.environ.get("CLAUDE_MODEL") or os.environ.get("AI_MODEL")
     if env_model:
-        clean = env_model.lower().strip()
-        for k in MODEL_PRICING:
-            if k in clean or clean in k:
-                return k
+        matched = resolve_model_key(env_model)
+        if matched:
+            return matched
+
+    # 3. Environment autodetection: Antigravity / Gemini platform
+    if os.environ.get("ANTIGRAVITY_AGENT") or os.environ.get("ANTIGRAVITY_CONVERSATION_ID") or os.environ.get("GEMINI_CLI"):
+        return "gemini-2.0-flash"
+
+    # 4. Environment autodetection: Claude Code
+    if os.environ.get("CLAUDE_CODE") or os.environ.get("USER_AGENT_CLAUDE"):
+        return "claude-3-7-sonnet"
 
     return DEFAULT_MODEL
 
