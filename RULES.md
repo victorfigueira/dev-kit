@@ -25,6 +25,8 @@ These rules govern all autonomous agents operating in `dev-kit`. Every agent mus
    - `fix(<scope>): resolve null pointer on empty profile`
    - `test(<scope>): add unit tests for discount calculation`
 3. **Clean Diffs:** Review `git diff` before committing. Ensure no temporary test files, secrets, or `.env` files are tracked.
+4. **Explicit Staging:** Stage files by explicit path, limited to the Affected Files Inventory of `dev/PLAN.md` and their tests. Never use `git add .`, `git add -A` or `git commit -a`.
+5. **Human Checkpoints:** Never push, comment on Jira or transition a Jira ticket without the user's approval at Checkpoint 2, and never start coding before the plan is approved at Checkpoint 1 (see `dev-kit/RUN.md`). Only an explicit `unattended` argument from the user lifts this.
 
 ---
 

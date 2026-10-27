@@ -4,6 +4,27 @@ This document defines the exact step-by-step procedure the Project Manager / Tec
 
 ---
 
+## Arguments and modes
+
+| Argument | Effect |
+|---|---|
+| `<TICKET_KEY>` or a feature brief | Work on that ticket only. |
+| *(none)* | Propose the top-priority backlog ticket (`jira_sync.py next`) and wait for the user to confirm it. |
+| `continuous` | After a ticket is delivered, propose the next backlog ticket and keep going. Checkpoints still apply to every ticket. |
+| `unattended` | Skip both checkpoints below. Valid only when the user typed it in this command; never infer it. With `continuous`, the squad works through the backlog without stopping. |
+| `no-update` | Skip the update check (Step 0). |
+
+## Checkpoints
+
+The squad stops and waits for the user at two points. Without a clear yes it does not continue past them, unless the user passed `unattended`.
+
+1. **Plan approval** (end of Step 2): before creating the branch, writing code or changing the Jira ticket.
+2. **Delivery approval** (Step 6): before pushing the branch, commenting on the Jira ticket or transitioning it.
+
+The user may approve part of a checkpoint (for example "push, but leave Jira alone"); do only what was approved. Approval of one ticket never carries over to the next.
+
+---
+
 ## The Workflow
 
 ```mermaid
@@ -16,12 +37,15 @@ sequenceDiagram
     participant QA as QA Verifier
     participant G as Git & PR
 
-    U->>PM: /dev [TICKET_KEY]
+    U->>PM: /dev [TICKET_KEY] [continuous] [unattended]
     alt No Ticket Provided
-        PM->>U: Query Jira backlog (python3 tools/jira_sync.py next)
+        PM->>U: Propose top backlog ticket (jira_sync.py next)
+        U-->>PM: Confirm ticket
     end
-    PM->>U: Read requirements & Acceptance Criteria
+    PM->>PM: Read requirements & Acceptance Criteria
     PM->>PM: Formulate dev/PLAN.md
+    PM->>U: Checkpoint 1: plan approval
+    U-->>PM: Approve
     PM->>G: git checkout -b feat/<TICKET>-<slug>
     opt Database Changes
         PM->>DB: Dispatch database-engineer
@@ -45,8 +69,11 @@ sequenceDiagram
         PM->>BE: Re-dispatch developer to fix
     else Tests Green
         QA-->>PM: Quality Gate APPROVED
-        PM->>G: Atomic commit & push
-        PM->>U: Report PR ready & transition Jira ticket
+        PM->>G: Local atomic commit (planned files only)
+        PM->>U: Checkpoint 2: delivery approval
+        U-->>PM: Approve
+        PM->>G: Push branch
+        PM->>U: Comment & transition Jira ticket
     end
 ```
 
@@ -68,15 +95,11 @@ Skip this step only if the user wrote `no-update` with the command.
      ```bash
      python3 dev-kit/tools/jira_sync.py fetch <TICKET_KEY> --json
      ```
-   - **Autonomous Backlog Mode (No argument passed):** The Tech Lead queries the project backlog and takes the top prioritized ticket:
+   - **No ticket passed:** Query the backlog for the top-priority ticket, show its key, summary and Acceptance Criteria, and ask the user to confirm it before planning (skip the question only with `unattended`):
      ```bash
      python3 dev-kit/tools/jira_sync.py next
      ```
-3. Transition ticket status to **In Progress**:
-   ```bash
-   python3 dev-kit/tools/jira_sync.py transition <TICKET_KEY> "In Progress"
-   ```
-4. Read `dev/project-context.md` to verify tech stack, base branch, package manager, and test commands.
+3. Read `dev/project-context.md` to verify tech stack, base branch, package manager, and test commands.
 
 ### Step 2: Formulate Technical Plan
 1. Create `dev/` directory if missing.
@@ -84,18 +107,26 @@ Skip this step only if the user wrote `no-update` with the command.
 3. Fill in:
    - Problem statement and numbered Acceptance Criteria (`AC-1`, `AC-2`...).
    - Architectural scope (Database, Backend, Frontend).
-   - List of exact files to modify or create.
+   - List of exact files to modify or create (the Affected Files Inventory; Step 6 stages only these).
    - Ordered execution steps.
+4. **Checkpoint 1: plan approval.** Show the user, in at most 15 lines: the Acceptance Criteria, the layers involved, the Affected Files Inventory and any assumptions. Say that approving will create `feat/<TICKET_KEY>-<slug>` and move the ticket to *In Progress*. Wait for the answer:
+   - **Approved:** continue with Step 3.
+   - **Changes requested:** update `dev/PLAN.md` and ask again.
+   - **Rejected:** stop. Change nothing in git or Jira.
 
 ### Step 3: Setup Feature Branch
-1. Ensure the working tree is clean on the base branch (`main`).
+1. Ensure the working tree is clean on the base branch from `dev/project-context.md` (`main` if not set). If it is not clean, stop and tell the user; never stash or discard their changes.
 2. Pull latest changes:
    ```bash
-   git checkout main && git pull origin main
+   git checkout <BASE_BRANCH> && git pull origin <BASE_BRANCH>
    ```
 3. Create and switch to the feature branch:
    ```bash
    git checkout -b feat/<TICKET_KEY>-<slug>
+   ```
+4. If Jira is configured, move the ticket to *In Progress* (approved at Checkpoint 1):
+   ```bash
+   python3 dev-kit/tools/jira_sync.py transition <TICKET_KEY> "In Progress"
    ```
 
 ### Step 4: Dispatch Specialized Developers
@@ -125,24 +156,34 @@ python3 dev-kit/tools/test_runner.py --typecheck --lint
 2. **Acceptance Criteria Verification:** Every AC listed in `dev/PLAN.md` must be validated against actual code.
 3. **Diff Hygiene:** Check `git diff` to ensure no temporary files, debug statements, or secrets are tracked.
 
-### Step 6: Git Commit & Hand-off
+### Step 6: Commit & Delivery
 Once QA approves:
-1. Stage modified files and make an atomic conventional commit:
+1. **Stage only the planned files.** Run `git status --porcelain` and stage, by explicit path, the files in the Affected Files Inventory of `dev/PLAN.md` plus the tests written for them:
    ```bash
-   git add .
+   git add <path> <path> ...
+   ```
+   Never use `git add .`, `git add -A` or `git commit -a`. If other files changed, leave them unstaged and list them at Checkpoint 2.
+2. Make a local atomic conventional commit:
+   ```bash
    git commit -m "feat(<scope>): <concise description of changes>"
    ```
-2. Log development cost, update cumulative `dev/COSTS.md` ledger, and post comment to Jira:
+3. Log the development cost locally (no Jira comment yet):
    ```bash
-   python3 dev-kit/tools/cost_tracker.py log --ticket <TICKET_KEY> --summary "<TITLE>" --branch "feat/<TICKET_KEY>-<slug>"
+   python3 dev-kit/tools/cost_tracker.py log --ticket <TICKET_KEY> --summary "<TITLE>" --branch "feat/<TICKET_KEY>-<slug>" --no-jira
    ```
-   Embed the cost table and token metrics into `dev/PULL_REQUEST.md` (and preserve `dev/PR_<TICKET_KEY>.md`).
-3. Push the feature branch to origin:
+   Write `dev/PULL_REQUEST.md` from `dev-kit/templates/PULL_REQUEST.md`, with the cost table and token metrics.
+4. **Checkpoint 2: delivery approval.** Show the user, in at most 12 lines: the commit hash and message, the files committed, any changed files left unstaged, the QA verdict and the cost. Ask whether to:
+   - push `feat/<TICKET_KEY>-<slug>` to origin;
+   - comment on the Jira ticket with the delivery summary;
+   - move the ticket to *In Review*.
+   Wait for the answer and do only what was approved. Without approval, leave the commit local and go to Step 7.
+5. If approved, push the feature branch:
    ```bash
    git push origin feat/<TICKET_KEY>-<slug>
    ```
-4. If Jira is configured, transition ticket status:
+6. If approved and Jira is configured, comment and transition:
    ```bash
+   python3 dev-kit/tools/jira_sync.py comment <TICKET_KEY> "Quality Gate APPROVED · Branch: feat/<TICKET_KEY>-<slug> · Cost: $<cost> USD (<tokens> tokens · <model>)"
    python3 dev-kit/tools/jira_sync.py transition <TICKET_KEY> "In Review"
    ```
 
@@ -150,30 +191,27 @@ Once QA approves:
 Report completion in chat (maximum 15 lines):
 ```
 Squad task complete · [TICKET_KEY]: <Title>
-Branch: feat/<TICKET_KEY>-<slug>
+Branch: feat/<TICKET_KEY>-<slug> · <pushed | local only>
 Delivery Scorecard:
-  • Database: [0 migrations · up/down verified]
+  • Database: [<n> migrations · up/down verified]
   • Backend: [<n> endpoints · <n> unit tests]
   • Frontend: [<n> components · 4 states verified]
-  • Quality Gate: 🟢 APPROVED (<n> tests green · typecheck clean · lint clean)
-Cost: $0.27 USD (48,250 tokens · Claude 3.7 Sonnet)
+  • Quality Gate: APPROVED (<n> tests green · typecheck clean · lint clean)
+Cost: $<x.xx> USD (<tokens> tokens · <model>)
 Acceptance Criteria: All <n> criteria verified
 Pull Request summary: dev/PULL_REQUEST.md
-Jira: [TICKET_KEY] transitioned to In Review
+Jira: [TICKET_KEY] <transitioned to In Review | not changed>
 ```
 
-### Step 8: Continuous Backlog Auto-Progression (Do Not Halt)
-When running in Autonomous Backlog Mode (`/dev` without a specific ticket key):
-1. **Never wait for another user `/dev` command.**
-2. Switch back to base branch:
+### Step 8: Next Ticket (`continuous` only)
+Without `continuous`, stop after Step 7. With it:
+1. Switch back to the base branch:
    ```bash
    git checkout <BASE_BRANCH> && git pull origin <BASE_BRANCH>
    ```
-3. Query the next ticket:
+2. Query the next ticket:
    ```bash
    python3 dev-kit/tools/jira_sync.py next
    ```
-4. If another pending ticket exists (e.g. `PAS-2`), announce:
-   `"🚀 Proceeding to next backlog ticket: PAS-2 · <Summary>..."`
-   and immediately begin executing Step 2 for `PAS-2`.
-5. Repeat this loop automatically until all sprint tickets are resolved, a QA circuit-breaker halts execution, or the user pauses.
+3. If one exists, announce it (`Next backlog ticket: <KEY> · <Summary>`) and start again from Step 1 for it, including both checkpoints (unless `unattended`).
+4. Stop when the backlog is empty, a ticket hits the QA circuit breaker, the user rejects a plan, or the user asks to pause.

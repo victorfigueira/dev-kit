@@ -1,9 +1,9 @@
 ---
 name: dev-feature
-description: Alias for /dev. Autonomous feature development squad. Reads ticket/spec, architects PLAN.md, dispatches specialized developers, and enforces QA Quality Gate.
+description: Alias for /dev. Follows dev-kit/RUN.md, including plan and delivery approval checkpoints.
 ---
 
-# Autonomous Feature Development Squad (`/dev-feature`)
+# Feature Development Squad (`/dev-feature`)
 
 > **Note:** `/dev-feature` is an alias for `/dev`. Both commands execute the same squad orchestration protocol.
 

@@ -1,6 +1,6 @@
 # dev-kit
 
-Current version: **0.5.0** (see `CHANGELOG.md`). Full documentation: [docs/GUIDE.md](docs/GUIDE.md). Protocol & workflow: [RUN.md](RUN.md).
+Current version: **0.6.0** (see `CHANGELOG.md`). Full documentation: [docs/GUIDE.md](docs/GUIDE.md). Protocol & workflow: [RUN.md](RUN.md).
 
 A portable autonomous software engineering squad: a **Project Manager & Tech Lead** orchestrator, specialized developers (**Database**, **Backend**, **Frontend**), and an independent **QA Engineer** quality gate that guarantees test suites pass and acceptance criteria are met before opening Pull Requests.
 
@@ -18,7 +18,7 @@ From the root of the project you want to develop on:
 curl -fsSL https://raw.githubusercontent.com/victorfigueira/dev-kit/main/get.sh | bash
 ```
 
-This downloads the kit into `dev-kit/` and installs the commands for Claude Code, Antigravity, and Cursor. For one tool only, add its name at the end: `| bash -s -- antigravity` (or `claude`, `cursor`). To pin a version, put `DEV_KIT_REF=v0.5.0` before `bash`.
+This downloads the kit into `dev-kit/` and installs the commands for Claude Code, Antigravity, and Cursor. For one tool only, add its name at the end: `| bash -s -- antigravity` (or `claude`, `cursor`). To pin a version, put `DEV_KIT_REF=v0.6.0` before `bash`.
 
 Keep squad working plans, temporary files, and the kit copy out of git:
 
@@ -39,12 +39,14 @@ Review the file and resolve every `TO CONFIRM` by hand. This step configures the
 
 ### 3. Run the development squad
 
-Run `/dev` directly. If no ticket key is specified, the Tech Lead automatically inspects your Jira backlog and picks the top-priority ticket to implement:
+Run `/dev <TICKET_KEY>`. Without a key, the Tech Lead proposes the top-priority ticket from your Jira backlog and waits for you to confirm it.
 
-| Tool | Autonomous Squad (`/dev`) | QA Quality Gate Only | Technical Plan Only |
+The squad stops twice for your approval: once the plan is written (before it creates the branch, writes code or touches Jira) and once QA has approved and the work is committed locally (before it pushes, comments on Jira or moves the ticket). Add `continuous` to carry on with the next backlog ticket after each delivery, and `unattended` to skip both approvals; the squad never assumes either. See the modes table in [RUN.md](RUN.md).
+
+| Tool | Squad (`/dev`) | QA Quality Gate Only | Technical Plan Only |
 |---|---|---|---|
-| **Antigravity** | `/dev [TICKET_KEY]` | `/dev-qa` | "Follow dev-kit/RUN.md step 2, write dev/PLAN.md for <ticket>" |
-| **Claude Code** | `/dev [TICKET_KEY]` | `/dev-qa` | `/dev` (stops after PLAN.md approval) |
+| **Antigravity** | `/dev [TICKET_KEY] [continuous] [unattended]` | `/dev-qa` | `/dev <ticket>`, then reject at plan approval |
+| **Claude Code** | `/dev [TICKET_KEY] [continuous] [unattended]` | `/dev-qa` | `/dev <ticket>`, then reject at plan approval |
 | **Cursor** | "Follow dev-kit/RUN.md (`/dev`)" | "Follow dev-kit/agents/qa.md" | "Write dev/PLAN.md using dev-kit/templates/PLAN.md" |
 | **Any other agent** | "Follow dev-kit/RUN.md (`/dev`)" | "Run python3 dev-kit/tools/test_runner.py" | "Fill in dev-kit/templates/PLAN.md" |
 
@@ -72,8 +74,8 @@ All development artifacts go to `dev/` in your project:
 - `PULL_REQUEST.md`: Pull request summary with Squad Delivery Scorecard, Token & USD Cost calculation, full test execution evidence, and Jira ticket cross-links.
 - `project-context.md`: Project-specific test commands, migration runners, and branching rules.
 - **Git Feature Branch:** `feat/<TICKET_KEY>-<slug>` created cleanly from `main`.
-- **Atomic Commits:** Conventional commits (`feat: ...`, `fix: ...`) verified by QA tests.
-- **Jira Status Transitions:** Automatically moved to *In Progress* during coding and *In Review* upon QA sign-off.
+- **Atomic Commits:** Conventional commits (`feat: ...`, `fix: ...`) verified by QA tests, staging only the files in the plan.
+- **Jira Status Transitions:** *In Progress* once you approve the plan, *In Review* once you approve the delivery.
 
 ---
 
@@ -119,12 +121,12 @@ flowchart TD
 
 Every task follows the protocol defined in [`RUN.md`](RUN.md):
 
-1. **Ingest & Triage:** Reads ticket key (e.g. `AK-101`) via `tools/jira_sync.py` or user brief; extracts Acceptance Criteria checkboxes; transitions Jira to *In Progress*.
-2. **Technical Plan (`dev/PLAN.md`):** Formulates affected layers, file lists, and sequencing before writing any code.
-3. **Feature Branch:** Creates `feat/<TICKET_KEY>-<slug>` from latest `main`.
+1. **Ingest & Triage:** Reads ticket key (e.g. `AK-101`) via `tools/jira_sync.py` or user brief and extracts Acceptance Criteria checkboxes.
+2. **Technical Plan (`dev/PLAN.md`):** Formulates affected layers, file lists, and sequencing, then waits for your approval (Checkpoint 1).
+3. **Feature Branch:** Creates `feat/<TICKET_KEY>-<slug>` from the latest base branch and moves Jira to *In Progress*.
 4. **Specialized Build:** Executes in dependency order (Database migrations first $\rightarrow$ Backend API contracts second $\rightarrow$ Frontend UI third).
 5. **Quality Gate:** The QA agent runs `tools/test_runner.py --typecheck --lint` and verifies every Acceptance Criterion. If any test fails, it sends logs back to the developer to resolve.
-6. **Delivery & PR:** Once tests pass green, creates atomic conventional commit, writes `dev/PULL_REQUEST.md`, and moves Jira ticket to *In Review*.
+6. **Delivery & PR:** Once tests pass green, commits the planned files locally, writes `dev/PULL_REQUEST.md`, and asks before pushing and moving the Jira ticket to *In Review* (Checkpoint 2).
 
 ---
 

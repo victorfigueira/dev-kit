@@ -36,7 +36,7 @@ Instead of asking a single general-purpose prompt to write fullstack code (which
 * **Frontend Developer**: Builds accessible UI components and handles all 4 async states.
 * **QA Engineer**: Validates acceptance criteria and prevents broken code from being committed.
 
-Drop `dev-kit/` into any repository and run `/dev` on any task or Jira ticket, or let the Tech Lead auto-pick the top ticket from your backlog.
+Drop `dev-kit/` into any repository and run `/dev` on any task or Jira ticket, or let the Tech Lead propose the top ticket from your backlog. The squad asks for your approval of the plan and of the delivery.
 
 ---
 
@@ -47,7 +47,9 @@ Every development task follows a strict 6-stage lifecycle:
 ```mermaid
 flowchart TD
     A[1. Ingest Ticket / Task] --> B[2. Technical Plan: dev/PLAN.md]
-    B --> C[3. Git Feature Branch]
+    B --> CP1{Checkpoint 1: plan approved?}
+    CP1 -->|Changes| B
+    CP1 -->|Yes| C[3. Git Feature Branch]
     C --> D[4. Specialized Execution]
     
     subgraph Execution Order
@@ -68,15 +70,20 @@ flowchart TD
         E3 -->|No| Fix
     end
     
-    E3 -->|Approved| F[6. Atomic Commit & PR Proposal]
+    E3 -->|Approved| F[6. Local Commit & PR Summary]
+    F --> CP2{Checkpoint 2: delivery approved?}
+    CP2 -->|Yes| P[Push, Jira comment & In Review]
+    CP2 -->|No| L[Commit stays local]
 ```
 
 1. **Ingest:** Reads ticket key (e.g. `AK-101`) from Jira or a prompt brief, extracting explicit Acceptance Criteria.
-2. **Plan:** The PM agent writes `dev/PLAN.md` documenting affected files, Squad Delivery Matrix, assumptions, and execution order.
-3. **Branch:** Creates an isolated git branch (`feat/<TICKET>-<slug>`).
+2. **Plan:** The PM agent writes `dev/PLAN.md` documenting affected files, Squad Delivery Matrix, assumptions, and execution order, and waits for your approval.
+3. **Branch:** Creates an isolated git branch (`feat/<TICKET>-<slug>`) and moves the ticket to *In Progress*.
 4. **Build:** Dispatches specialists in order (Database $\rightarrow$ Backend $\rightarrow$ Frontend).
 5. **Verify:** The QA agent runs `tools/test_runner.py` and inspects `git diff`.
-6. **Deliver:** Writes `dev/PULL_REQUEST.md` (with Squad Delivery & Quality Gate Scorecard), commits cleanly, and updates Jira status.
+6. **Deliver:** Commits only the planned files, writes `dev/PULL_REQUEST.md` (with Squad Delivery & Quality Gate Scorecard), then asks before pushing and updating Jira.
+
+Arguments: `continuous` carries on with the next backlog ticket after each delivery (checkpoints included) and `unattended` skips both checkpoints. Neither is ever assumed.
 
 ---
 
@@ -119,7 +126,8 @@ Edit `dev/project-context.md` to specify:
 
 | Command | Usage | Description |
 |---|---|---|
-| `/dev-feature` | `/dev-feature <TICKET_KEY>` | Launches the full squad pipeline: PM plans, devs implement, QA verifies and opens PR. |
+| `/dev` | `/dev [TICKET_KEY] [continuous] [unattended] [no-update]` | Runs the squad: PM plans and waits for approval, devs implement, QA verifies, then it asks before pushing and updating Jira. |
+| `/dev-feature` | `/dev-feature <TICKET_KEY>` | Alias for `/dev`. |
 | `/dev-qa` | `/dev-qa` | Runs the QA Quality Gate independently on the current git diff. |
 | `/dev-check-update` | `/dev-check-update` | Checks GitHub for a newer dev-kit, summarises what is new and installs it after you confirm. |
 
@@ -224,7 +232,7 @@ export JIRA_API_TOKEN="your-atlassian-api-token"
 
 * **Offline Fallback:** If Jira credentials are not present, `jira_sync.py` falls back gracefully to local mock mode so developers can run `dev-kit` without network access.
 * **Acceptance Criteria Extraction:** Automatically parses markdown checkboxes (`- [ ]`) and numbered lists (`AC-1:`) from the ticket description.
-* **Autonomous Backlog & Prioritization:** Run `python3 dev-kit/tools/jira_sync.py backlog [PROJECT_KEY]` or `next [PROJECT_KEY]` to automatically fetch, rank, and sequence sprint tickets.
+* **Backlog & Prioritization:** Run `python3 dev-kit/tools/jira_sync.py backlog [PROJECT_KEY]` or `next [PROJECT_KEY]` to fetch and rank sprint tickets. `/dev` without a key proposes the top one and waits for confirmation.
 
 ---
 

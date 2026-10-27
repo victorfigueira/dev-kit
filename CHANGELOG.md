@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0 – 28/10/2026
+- Added human checkpoints (DK-3): the squad waits for plan approval before creating the branch, writing code or moving the Jira ticket to *In Progress*, and for delivery approval before pushing, commenting on Jira or moving the ticket to *In Review*.
+- `/dev` without a ticket key now proposes the top backlog ticket and waits for confirmation. Continuous backlog progression is opt-in with `continuous`; `unattended` skips both checkpoints and is never assumed.
+- Step 6 stages only the files in the plan's Affected Files Inventory by explicit path; `git add .`, `git add -A` and `git commit -a` are forbidden in `RULES.md`. The cost is logged locally (`--no-jira`) and the Jira comment is posted only after approval.
+- Step 3 refuses to start on a dirty working tree and uses the base branch from `dev/project-context.md`.
+- `/dev` adapters for Claude Code and Antigravity are now thin pointers to `RUN.md` with the new arguments; the Cursor rule and `/dev-feature` aliases follow the same checkpoints.
+
 ## 0.5.0 – 28/10/2026
 - Replaced the silent auto-update with a confirmed update flow (DK-2): new `UPDATE.md`; `RUN.md` Step 0 now shows what is new and asks before installing, and `no-update` skips the check.
 - Added `/dev-check-update` for Claude Code and Antigravity.
